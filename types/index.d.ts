@@ -17,9 +17,11 @@ export interface SubCategory {
   id: string;
   name: string;
   description?: string;
-  data: PricingRow[];
-  columns: ColumnDefinition[];
+  data?: PricingRow[];
+  columns?: ColumnDefinition[];
   additionalNotes?: string[] | string;
+  type?: 'table' | 'image';  // Differentiate content types
+  images?: string[]; 
 }
 
 export interface Category {

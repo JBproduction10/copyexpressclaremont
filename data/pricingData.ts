@@ -1710,4 +1710,73 @@ export const pricingCategories: Category[] = [
       },
     ],
   },
+  {
+    id: 'stamps',
+    name: 'STAMPS',
+    description: 'Professional stamp products for business and industry',
+    subcategories: [
+      {
+        id: 'self-inking-stamps',
+        name: 'Self-Inking Stamps',
+        type: 'image',
+        images: [
+          '/stamps/self-inking-page-1.jpg',
+          '/stamps/self-inking-page-2.jpg',
+          '/stamps/self-inking-page-3.jpg',
+        ],
+        additionalNotes: [
+          'All prices are VAT inclusive',
+          'Text plates are 2mm smaller than stamp size',
+          'Stamps come standard with black pad',
+          'Optional colours available at extra cost: Red, Blue, Green, Violet',
+        ],
+      },
+      {
+        id: 'hand-stamps',
+        name: 'Hand Stamps',
+        type: 'image',
+        images: [
+          '/stamps/hand_stamps_prices.jpg',
+        ],
+        additionalNotes: 'All texts will be 2mm smaller than the handle size',
+      },
+      {
+        id: 'daters-numberers',
+        name: 'Daters & Numberers',
+        type: 'image',
+        images: [
+          '/stamps/daters-numberers.jpg',
+          '/stamps/daters-numberers-2.jpg',
+        ],
+        additionalNotes: [
+          'Professional dater stamps available',
+          'Available in multiple colors: Black, Red, Blue, Green, Violet',
+        ],
+      },
+      {
+        id: 'pre-inked-stamps',
+        name: 'Pre-Inked Stamps',
+        type: 'image',
+        images: [
+          '/stamps/pre-inked-page-1.jpg',
+          '/stamps/pre-inked-page-2.jpg',
+        ],
+        additionalNotes: 'Only available in specific colors as indicated',
+      },
+      {
+        id: 'accessories',
+        name: 'Stamp Accessories',
+        type: 'image',
+        images: [
+          '/stamps/accessories.jpg',
+          '/stamps/accessories-2.jpg',
+          '/stamps/accessories-3.jpg',
+        ],
+        additionalNotes: [
+          'Ink pads available in Black, Red, Blue, Green, Violet and un-inked',
+          'ID Protector available - hide personal information with one roll',
+        ],
+      },
+    ],
+  }
 ];
