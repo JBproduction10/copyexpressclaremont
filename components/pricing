@@ -1,0 +1,315 @@
+'use client';
+
+import React, { useState } from 'react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+
+// Binding Data (existing)
+const plasticBindingData = [
+  { qty: '1 - 5', '8MM': 'R25.0', '10MM': 'R28.0', '12MM': 'R30.0', '16MM': 'R36.0', '19MM': 'R42.0', '25MM': 'R50.0', '28MM': 'R56.0', '32MM': 'R60.0', '45MM': 'R80.0', discount: '' },
+  { qty: '6 - 10', '8MM': 'R22.0', '10MM': 'R24.6', '12MM': 'R26.4', '16MM': 'R31.7', '19MM': 'R37.0', '25MM': 'R44.0', '28MM': 'R49.3', '32MM': 'R52.8', '45MM': 'R70.4', discount: '12%' },
+  { qty: '11-15', '8MM': 'R21.0', '10MM': 'R23.5', '12MM': 'R25.2', '16MM': 'R30.2', '19MM': 'R35.3', '25MM': 'R42.0', '28MM': 'R47.0', '32MM': 'R50.4', '45MM': 'R67.2', discount: '16%' },
+  { qty: '16-20', '8MM': 'R18.8', '10MM': 'R21.0', '12MM': 'R22.5', '16MM': 'R27.0', '19MM': 'R31.5', '25MM': 'R37.5', '28MM': 'R42.0', '32MM': 'R45.0', '45MM': 'R60.0', discount: '25%' },
+  { qty: '21-30', '8MM': 'R17.5', '10MM': 'R19.6', '12MM': 'R21.0', '16MM': 'R25.2', '19MM': 'R29.4', '25MM': 'R35.0', '28MM': 'R39.2', '32MM': 'R42.0', '45MM': 'R56.0', discount: '30%' },
+  { qty: '31-50', '8MM': 'R16.3', '10MM': 'R18.2', '12MM': 'R19.5', '16MM': 'R23.4', '19MM': 'R27.3', '25MM': 'R32.5', '28MM': 'R36.4', '32MM': 'R39.0', '45MM': 'R52.0', discount: '35%' },
+  { qty: '51-100', '8MM': 'R15.0', '10MM': 'R16.8', '12MM': 'R18.0', '16MM': 'R21.6', '19MM': 'R25.2', '25MM': 'R30.0', '28MM': 'R33.6', '32MM': 'R36.0', '45MM': 'R48.0', discount: '40%' },
+  { qty: 'BULK', '8MM': 'R13.8', '10MM': 'R15.4', '12MM': 'R16.5', '16MM': 'R19.8', '19MM': 'R23.1', '25MM': 'R27.5', '28MM': 'R30.8', '32MM': 'R33.0', '45MM': 'R44.0', discount: '45%' },
+];
+
+const wireBindingData = [
+  { qty: '1 - 5', '6MM': 'R30.0', '8MM': 'R33.0', '9.5MM': 'R36.0', '12.7MM': 'R40.0', '14MM': 'R46.0', '25MM': 'R65.0', '32MM': 'R80.0', discount: '' },
+  { qty: '6 - 10', '6MM': 'R26.4', '8MM': 'R29.0', '9.5MM': 'R31.7', '12.7MM': 'R35.2', '14MM': 'R40.5', '25MM': 'R57.2', '32MM': 'R70.4', discount: '12%' },
+  { qty: '11-15', '6MM': 'R25.2', '8MM': 'R27.7', '9.5MM': 'R30.2', '12.7MM': 'R33.6', '14MM': 'R38.6', '25MM': 'R54.6', '32MM': 'R67.2', discount: '16%' },
+  { qty: '16-20', '6MM': 'R22.5', '8MM': 'R24.8', '9.5MM': 'R27.0', '12.7MM': 'R30.0', '14MM': 'R34.5', '25MM': 'R48.8', '32MM': 'R60.0', discount: '25%' },
+  { qty: '21-30', '6MM': 'R21.0', '8MM': 'R23.1', '9.5MM': 'R25.2', '12.7MM': 'R28.0', '14MM': 'R32.2', '25MM': 'R45.5', '32MM': 'R56.0', discount: '30%' },
+  { qty: '31-50', '6MM': 'R19.5', '8MM': 'R21.5', '9.5MM': 'R23.4', '12.7MM': 'R26.0', '14MM': 'R29.9', '25MM': 'R42.3', '32MM': 'R52.0', discount: '35%' },
+  { qty: '51-100', '6MM': 'R18.0', '8MM': 'R19.8', '9.5MM': 'R21.6', '12.7MM': 'R24.0', '14MM': 'R27.6', '25MM': 'R39.0', '32MM': 'R48.0', discount: '40%' },
+  { qty: 'BULK', '6MM': 'R16.5', '8MM': 'R18.2', '9.5MM': 'R19.8', '12.7MM': 'R22.0', '14MM': 'R25.3', '25MM': 'R35.8', '32MM': 'R44.0', discount: '45%' },
+];
+
+const otherBindingData = [
+  { qty: '1 - 5', hotGlueUnprinted: 'R35.0', hotGluePrinted: 'R80.0', hardUnprinted: 'R125.0', hardPrinted: 'R220.0', metalRingHard: 'R115.0', metalRingPrinted: 'R190.0', saddle: 'R20.0', a5Cold: 'R17.0', a4Cold: 'R26.0', a5Printed: 'R45.0', a4Printed: 'R60.0', discount: '' },
+  { qty: '6 - 10', hotGlueUnprinted: 'R30.8', hotGluePrinted: 'R70.4', hardUnprinted: 'R110.0', hardPrinted: 'R193.6', metalRingHard: 'R101.2', metalRingPrinted: 'R167.2', saddle: 'R17.6', a5Cold: 'R15.0', a4Cold: 'R22.9', a5Printed: 'R39.6', a4Printed: 'R52.8', discount: '12%' },
+  { qty: '11-15', hotGlueUnprinted: 'R29.4', hotGluePrinted: 'R67.2', hardUnprinted: 'R105.0', hardPrinted: 'R184.8', metalRingHard: 'R96.6', metalRingPrinted: 'R159.6', saddle: 'R16.8', a5Cold: 'R14.3', a4Cold: 'R21.8', a5Printed: 'R37.8', a4Printed: 'R50.4', discount: '16%' },
+  { qty: '16-20', hotGlueUnprinted: 'R26.3', hotGluePrinted: 'R60.0', hardUnprinted: 'R93.8', hardPrinted: 'R165.0', metalRingHard: 'R86.3', metalRingPrinted: 'R142.5', saddle: 'R15.0', a5Cold: 'R12.8', a4Cold: 'R19.5', a5Printed: 'R33.8', a4Printed: 'R45.0', discount: '25%' },
+  { qty: '21-30', hotGlueUnprinted: 'R24.5', hotGluePrinted: 'R56.0', hardUnprinted: 'R87.5', hardPrinted: 'R154.0', metalRingHard: 'R80.5', metalRingPrinted: 'R133.0', saddle: 'R14.0', a5Cold: 'R11.9', a4Cold: 'R18.2', a5Printed: 'R31.5', a4Printed: 'R42.0', discount: '30%' },
+  { qty: '31-50', hotGlueUnprinted: 'R22.8', hotGluePrinted: 'R52.0', hardUnprinted: 'R81.3', hardPrinted: 'R143.0', metalRingHard: 'R74.8', metalRingPrinted: 'R123.5', saddle: 'R13.0', a5Cold: 'R11.1', a4Cold: 'R16.9', a5Printed: 'R29.3', a4Printed: 'R39.0', discount: '35%' },
+  { qty: '51-100', hotGlueUnprinted: 'R21.0', hotGluePrinted: 'R48.0', hardUnprinted: 'R75.0', hardPrinted: 'R132.0', metalRingHard: 'R69.0', metalRingPrinted: 'R114.0', saddle: 'R12.0', a5Cold: 'R10.2', a4Cold: 'R15.6', a5Printed: 'R27.0', a4Printed: 'R36.0', discount: '40%' },
+  { qty: 'BULK', hotGlueUnprinted: 'R19.3', hotGluePrinted: 'R44.0', hardUnprinted: 'R68.8', hardPrinted: 'R121.0', metalRingHard: 'R63.3', metalRingPrinted: 'R104.5', saddle: 'R11.0', a5Cold: 'R9.4', a4Cold: 'R14.3', a5Printed: 'R24.8', a4Printed: 'R33.0', discount: '45%' },
+];
+
+// Sample data structure for other categories (you can populate these with actual data)
+const samplePricingData = [
+  { qty: '1 - 5', basic: 'R50.0', standard: 'R75.0', premium: 'R100.0', discount: '' },
+  { qty: '6 - 10', basic: 'R44.0', standard: 'R66.0', premium: 'R88.0', discount: '12%' },
+  { qty: '11-15', basic: 'R42.0', standard: 'R63.0', premium: 'R84.0', discount: '16%' },
+  { qty: '16-20', basic: 'R37.5', standard: 'R56.3', premium: 'R75.0', discount: '25%' },
+  { qty: '21-30', basic: 'R35.0', standard: 'R52.5', premium: 'R70.0', discount: '30%' },
+];
+
+const Pricing = () => {
+  return (
+    <section id='prices' className='py-20 bg-background'>
+
+      <div className='container mx-auto px-6'>
+
+            <div className='text-center mb-16 animate-fade-in'>
+                <h2 className='text-4xl md:text-5xl font-bold text-foreground mb-4'>
+                    <span className='text-primary'>Pricing</span>
+                </h2>
+                <p className='text-xl text-muted-foreground max-w-2xl mx-auto'>
+                    Choose the package that fits your needs. All packages include our quality guarantee.
+                </p>
+            </div>
+
+            <div className="w-full max-w-7xl mx-auto">
+                <Tabs defaultValue="binding" className="w-full">
+                    <TabsList className="grid w-full grid-cols-4 lg:grid-cols-6 mb-6 h-auto flex-wrap">
+                    <TabsTrigger value="binding" className="text-sm">Binding</TabsTrigger>
+                    <TabsTrigger value="printing" className="text-sm">Printing</TabsTrigger>
+                    <TabsTrigger value="copying" className="text-sm">Copying</TabsTrigger>
+                    <TabsTrigger value="scanning" className="text-sm">Scanning</TabsTrigger>
+                    <TabsTrigger value="laminating" className="text-sm">Laminating</TabsTrigger>
+                    <TabsTrigger value="design" className="text-sm">Design</TabsTrigger>
+                    <TabsTrigger value="business-cards" className="text-sm">Business Cards</TabsTrigger>
+                    <TabsTrigger value="flyers" className="text-sm">Flyers</TabsTrigger>
+                    <TabsTrigger value="brochures" className="text-sm">Brochures</TabsTrigger>
+                    <TabsTrigger value="posters" className="text-sm">Posters</TabsTrigger>
+                    <TabsTrigger value="banners" className="text-sm">Banners</TabsTrigger>
+                    <TabsTrigger value="vinyl" className="text-sm">Vinyl Printing</TabsTrigger>
+                    <TabsTrigger value="canvas" className="text-sm">Canvas Prints</TabsTrigger>
+                    <TabsTrigger value="stickers" className="text-sm">Stickers</TabsTrigger>
+                    <TabsTrigger value="labels" className="text-sm">Labels</TabsTrigger>
+                    <TabsTrigger value="invitations" className="text-sm">Invitations</TabsTrigger>
+                    <TabsTrigger value="certificates" className="text-sm">Certificates</TabsTrigger>
+                    <TabsTrigger value="letterheads" className="text-sm">Letterheads</TabsTrigger>
+                    <TabsTrigger value="envelopes" className="text-sm">Envelopes</TabsTrigger>
+                    <TabsTrigger value="folders" className="text-sm">Folders</TabsTrigger>
+                    <TabsTrigger value="calendars" className="text-sm">Calendars</TabsTrigger>
+                    <TabsTrigger value="notebooks" className="text-sm">Notebooks</TabsTrigger>
+                    <TabsTrigger value="packaging" className="text-sm">Packaging</TabsTrigger>
+                    </TabsList>
+
+                    {/* BINDING CATEGORY WITH SUBCATEGORIES */}
+                    <TabsContent value="binding">
+                        <Card className="mb-6">
+                            <CardHeader>
+                                <CardTitle>Binding Services</CardTitle>
+                                <CardDescription>Professional binding options for all your document needs</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <Tabs defaultValue="plastic" className="w-full">
+                                    <TabsList className="grid w-full grid-cols-3 mb-6">
+                                        <TabsTrigger value="plastic">Plastic Binding</TabsTrigger>
+                                        <TabsTrigger value="wire">Wire Binding</TabsTrigger>
+                                        <TabsTrigger value="other">Other Options</TabsTrigger>
+                                    </TabsList>
+
+                                    {/* Plastic Binding Subcategory */}
+                                    <TabsContent value="plastic">
+                                        <Card>
+                                            <CardHeader>
+                                                <CardTitle>Plastic Comb Binding</CardTitle>
+                                                <CardDescription>Includes clear plastic front and 250GM backing board</CardDescription>
+                                            </CardHeader>
+                                            <CardContent>
+                                                <div className="overflow-x-auto">
+                                                    <table className="w-full border-collapse">
+                                                        <thead>
+                                                            <tr className="bg-gray-100">
+                                                            <th className="border p-3 text-left font-semibold">Quantity</th>
+                                                            <th className="border p-3 text-center font-semibold">8MM<br/><span className="text-xs font-normal">(30 sheets)</span></th>
+                                                            <th className="border p-3 text-center font-semibold">10MM<br/><span className="text-xs font-normal">(45 sheets)</span></th>
+                                                            <th className="border p-3 text-center font-semibold">12MM<br/><span className="text-xs font-normal">(70 sheets)</span></th>
+                                                            <th className="border p-3 text-center font-semibold">16MM<br/><span className="text-xs font-normal">(100 sheets)</span></th>
+                                                            <th className="border p-3 text-center font-semibold">19MM<br/><span className="text-xs font-normal">(130 sheets)</span></th>
+                                                            <th className="border p-3 text-center font-semibold">25MM<br/><span className="text-xs font-normal">(170 sheets)</span></th>
+                                                            <th className="border p-3 text-center font-semibold">28MM<br/><span className="text-xs font-normal">(220 sheets)</span></th>
+                                                            <th className="border p-3 text-center font-semibold">32MM<br/><span className="text-xs font-normal">(250 sheets)</span></th>
+                                                            <th className="border p-3 text-center font-semibold">45MM<br/><span className="text-xs font-normal">(350 sheets)</span></th>
+                                                            <th className="border p-3 text-center font-semibold">Discount</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            {plasticBindingData.map((row, idx) => (
+                                                            <tr key={idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                                                                <td className="border p-3 font-medium">{row.qty}</td>
+                                                                <td className="border p-3 text-center">{row['8MM']}</td>
+                                                                <td className="border p-3 text-center">{row['10MM']}</td>
+                                                                <td className="border p-3 text-center">{row['12MM']}</td>
+                                                                <td className="border p-3 text-center">{row['16MM']}</td>
+                                                                <td className="border p-3 text-center">{row['19MM']}</td>
+                                                                <td className="border p-3 text-center">{row['25MM']}</td>
+                                                                <td className="border p-3 text-center">{row['28MM']}</td>
+                                                                <td className="border p-3 text-center">{row['32MM']}</td>
+                                                                <td className="border p-3 text-center">{row['45MM']}</td>
+                                                                <td className="border p-3 text-center text-green-600 font-semibold">{row.discount}</td>
+                                                            </tr>
+                                                            ))}
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                    </TabsContent>
+
+                                    {/* Wire Binding Subcategory */}
+                                    <TabsContent value="wire">
+                                        <Card>
+                                            <CardHeader>
+                                                <CardTitle>Metal Ring Binding</CardTitle>
+                                                <CardDescription>Includes clear plastic front and 250GM backing board</CardDescription>
+                                            </CardHeader>
+                                            <CardContent>
+                                                <div className="overflow-x-auto">
+                                                    <table className="w-full border-collapse">
+                                                    <thead>
+                                                        <tr className="bg-gray-100">
+                                                        <th className="border p-3 text-left font-semibold">Quantity</th>
+                                                        <th className="border p-3 text-center font-semibold">6MM<br/><span className="text-xs font-normal">(20 sheets)</span></th>
+                                                        <th className="border p-3 text-center font-semibold">8MM<br/><span className="text-xs font-normal">(30 sheets)</span></th>
+                                                        <th className="border p-3 text-center font-semibold">9.5MM<br/><span className="text-xs font-normal">(45 sheets)</span></th>
+                                                        <th className="border p-3 text-center font-semibold">12.7MM<br/><span className="text-xs font-normal">(80 sheets)</span></th>
+                                                        <th className="border p-3 text-center font-semibold">14MM<br/><span className="text-xs font-normal">(100 sheets)</span></th>
+                                                        <th className="border p-3 text-center font-semibold">25MM<br/><span className="text-xs font-normal">(150 sheets)</span></th>
+                                                        <th className="border p-3 text-center font-semibold">32MM<br/><span className="text-xs font-normal">(220 sheets)</span></th>
+                                                        <th className="border p-3 text-center font-semibold">Discount</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {wireBindingData.map((row, idx) => (
+                                                        <tr key={idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                                                            <td className="border p-3 font-medium">{row.qty}</td>
+                                                            <td className="border p-3 text-center">{row['6MM']}</td>
+                                                            <td className="border p-3 text-center">{row['8MM']}</td>
+                                                            <td className="border p-3 text-center">{row['9.5MM']}</td>
+                                                            <td className="border p-3 text-center">{row['12.7MM']}</td>
+                                                            <td className="border p-3 text-center">{row['14MM']}</td>
+                                                            <td className="border p-3 text-center">{row['25MM']}</td>
+                                                            <td className="border p-3 text-center">{row['32MM']}</td>
+                                                            <td className="border p-3 text-center text-green-600 font-semibold">{row.discount}</td>
+                                                        </tr>
+                                                        ))}
+                                                    </tbody>
+                                                    </table>
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                    </TabsContent>
+
+                                    {/* Other Binding Options Subcategory */}
+                                    <TabsContent value="other">
+                                        <Card>
+                                            <CardHeader>
+                                                <CardTitle>Other Binding Options</CardTitle>
+                                                <CardDescription>Various binding styles including hot glue, cold glue padding, and saddle stitching</CardDescription>
+                                            </CardHeader>
+                                            <CardContent>
+                                                <div className="space-y-6">
+                                                    <div>
+                                                    <h3 className="text-lg font-semibold mb-3">Hot Glue Binding</h3>
+                                                    <div className="overflow-x-auto">
+                                                        <table className="w-full border-collapse">
+                                                        <thead>
+                                                            <tr className="bg-gray-100">
+                                                            <th className="border p-3 text-left font-semibold">Quantity</th>
+                                                            <th className="border p-3 text-center font-semibold">Unprinted<br/>Soft Cover</th>
+                                                            <th className="border p-3 text-center font-semibold">Printed<br/>Soft Cover</th>
+                                                            <th className="border p-3 text-center font-semibold">Unprinted<br/>Hard Cover</th>
+                                                            <th className="border p-3 text-center font-semibold">Printed<br/>Hard Cover</th>
+                                                            <th className="border p-3 text-center font-semibold">Discount</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            {otherBindingData.map((row, idx) => (
+                                                            <tr key={idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                                                                <td className="border p-3 font-medium">{row.qty}</td>
+                                                                <td className="border p-3 text-center">{row.hotGlueUnprinted}</td>
+                                                                <td className="border p-3 text-center">{row.hotGluePrinted}</td>
+                                                                <td className="border p-3 text-center">{row.hardUnprinted}</td>
+                                                                <td className="border p-3 text-center">{row.hardPrinted}</td>
+                                                                <td className="border p-3 text-center text-green-600 font-semibold">{row.discount}</td>
+                                                            </tr>
+                                                            ))}
+                                                        </tbody>
+                                                        </table>
+                                                    </div>
+                                                    </div>
+
+                                                    <div>
+                                                    <h3 className="text-lg font-semibold mb-3">Metal Ring Binding (Hard Cover)</h3>
+                                                    <div className="overflow-x-auto">
+                                                        <table className="w-full border-collapse">
+                                                        <thead>
+                                                            <tr className="bg-gray-100">
+                                                            <th className="border p-3 text-left font-semibold">Quantity</th>
+                                                            <th className="border p-3 text-center font-semibold">Unprinted<br/>Hard Cover</th>
+                                                            <th className="border p-3 text-center font-semibold">Printed<br/>Hard Cover</th>
+                                                            <th className="border p-3 text-center font-semibold">Discount</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            {otherBindingData.map((row, idx) => (
+                                                            <tr key={idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                                                                <td className="border p-3 font-medium">{row.qty}</td>
+                                                                <td className="border p-3 text-center">{row.metalRingHard}</td>
+                                                                <td className="border p-3 text-center">{row.metalRingPrinted}</td>
+                                                                <td className="border p-3 text-center text-green-600 font-semibold">{row.discount}</td>
+                                                            </tr>
+                                                            ))}
+                                                        </tbody>
+                                                        </table>
+                                                    </div>
+                                                    </div>
+
+                                                    <div>
+                                                    <h3 className="text-lg font-semibold mb-3">Other Binding Methods</h3>
+                                                    <div className="overflow-x-auto">
+                                                        <table className="w-full border-collapse">
+                                                        <thead>
+                                                            <tr className="bg-gray-100">
+                                                            <th className="border p-3 text-left font-semibold">Quantity</th>
+                                                            <th className="border p-3 text-center font-semibold">Saddle<br/>Stitching</th>
+                                                            <th className="border p-3 text-center font-semibold">A5 Cold Glue<br/>Padding</th>
+                                                            <th className="border p-3 text-center font-semibold">A4 Cold Glue<br/>Padding</th>
+                                                            <th className="border p-3 text-center font-semibold">A5 Printed<br/>Fold-Over</th>
+                                                            <th className="border p-3 text-center font-semibold">A4 Printed<br/>Fold-Over</th>
+                                                            <th className="border p-3 text-center font-semibold">Discount</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            {otherBindingData.map((row, idx) => (
+                                                            <tr key={idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                                                                <td className="border p-3 font-medium">{row.qty}</td>
+                                                                <td className="border p-3 text-center">{row.saddle}</td>
+                                                                <td className="border p-3 text-center">{row.a5Cold}</td>
+                                                                <td className="border p-3 text-center">{row.a4Cold}</td>
+                                                                <td className="border p-3 text-center">{row.a5Printed}</td>
+                                                                <td className="border p-3 text-center">{row.a4Printed}</td>
+                                                                <td className="border p-3 text-center text-green-600 font-semibold">{row.discount}</td>
+                                                            </tr>
+                                                            ))}
+                                                        </tbody>
+                                                        </table>
+                                                    </div>
+                                                    <p className="text-sm text-gray-600 mt-2">* Printed covers include cover setup fee</p>
+                                                    </div>
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                    </TabsContent>
+                                </Tabs>
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+                </Tabs>
+
+                <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+                    <p className="text-sm text-gray-700">
+                        <strong>Note:</strong> Prices are in South African Rand (R). Volume discounts automatically apply based on quantity ordered.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+)};
