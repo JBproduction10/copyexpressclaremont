@@ -1,26 +1,49 @@
-import React from 'react';
+'use client';
+
+import React, { useState } from 'react';
 import { SubCategory } from '@/types/index';
 import Image from 'next/image';
+import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 
 interface PricingTableProps {
   subcategory: SubCategory;
 }
 
 export const PricingTable: React.FC<PricingTableProps> = ({ subcategory }) => {
-  // Handle image-based subcategories
+  const [modalIndex, setModalIndex] = useState<number | null>(null);
+
+  const openModal = (index: number) => setModalIndex(index);
+  const closeModal = () => setModalIndex(null);
+
+  const prevImage = () => {
+    if (modalIndex === null || !subcategory.images) return;
+    setModalIndex((modalIndex - 1 + subcategory.images.length) % subcategory.images.length);
+  };
+
+  const nextImage = () => {
+    if (modalIndex === null || !subcategory.images) return;
+    setModalIndex((modalIndex + 1) % subcategory.images.length);
+  };
+
+  // IMAGE-BASED SUBCATEGORIES
   if (subcategory.type === 'image' && subcategory.images) {
     return (
       <div className="w-full space-y-6">
-        <div className="grid grid-cols-1 gap-6">
+        {/* HORIZONTAL SCROLL IMAGES */}
+        <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory">
           {subcategory.images.map((imagePath, idx) => (
-            <div key={idx} className="relative w-full">
+            <div
+              key={idx}
+              className="snap-center flex-shrink-0 w-full max-w-xs sm:max-w-sm lg:max-w-md cursor-pointer"
+              onClick={() => openModal(idx)}
+            >
               <div className="relative w-full bg-white rounded-lg overflow-hidden shadow-sm border border-border">
                 <Image
                   src={imagePath}
                   alt={`${subcategory.name} - Page ${idx + 1}`}
                   width={1200}
                   height={800}
-                  className="w-full h-auto object-contain"
+                  className="w-full h-auto object-contain max-h-[400px]"
                   priority={idx === 0}
                 />
               </div>
@@ -28,6 +51,7 @@ export const PricingTable: React.FC<PricingTableProps> = ({ subcategory }) => {
           ))}
         </div>
 
+        {/* ADDITIONAL NOTES */}
         {subcategory.additionalNotes && (
           <div className="mt-6 p-4 bg-muted/50 rounded-lg">
             {Array.isArray(subcategory.additionalNotes) ? (
@@ -43,16 +67,53 @@ export const PricingTable: React.FC<PricingTableProps> = ({ subcategory }) => {
             )}
           </div>
         )}
+
+        {/* MODAL */}
+        {modalIndex !== null && (
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 select-none">
+            {/* CLOSE BUTTON */}
+            <button
+              onClick={closeModal}
+              className="absolute top-4 right-4 text-white p-2 bg-black/40 rounded-full hover:bg-black/60 transition"
+            >
+              <X size={24} />
+            </button>
+
+            {/* LEFT BUTTON */}
+            <button
+              onClick={prevImage}
+              className="absolute left-4 top-1/2 -translate-y-1/2 p-3 bg-black/40 hover:bg-black/60 text-white rounded-full transition"
+            >
+              <ChevronLeft size={32} />
+            </button>
+
+            {/* IMAGE */}
+            <div className="max-w-5xl max-h-[90vh] p-2">
+              <Image
+                src={subcategory.images[modalIndex]}
+                alt="Expanded view"
+                width={1600}
+                height={1200}
+                className="max-w-full max-h-[90vh] object-contain mx-auto rounded-lg"
+              />
+            </div>
+
+            {/* RIGHT BUTTON */}
+            <button
+              onClick={nextImage}
+              className="absolute right-4 top-1/2 -translate-y-1/2 p-3 bg-black/40 hover:bg-black/60 text-white rounded-full transition"
+            >
+              <ChevronRight size={32} />
+            </button>
+          </div>
+        )}
       </div>
     );
   }
 
-  // Handle table-based subcategories
-  if (!subcategory.data || !subcategory.columns) {
-    return null;
-  }
+  // TABLE-BASED SUBCATEGORIES
+  if (!subcategory.data || !subcategory.columns) return null;
 
-  // ✅ TypeScript now knows these are defined
   const columns = subcategory.columns;
   const data = subcategory.data;
 
@@ -115,22 +176,6 @@ export const PricingTable: React.FC<PricingTableProps> = ({ subcategory }) => {
           </table>
         </div>
       </div>
-
-      {subcategory.additionalNotes && (
-        <div className="mt-3 sm:mt-4">
-          {Array.isArray(subcategory.additionalNotes) ? (
-            <ul className="text-xs sm:text-sm text-muted-foreground space-y-1 list-disc list-inside">
-              {subcategory.additionalNotes.map((note, idx) => (
-                <li key={idx}>{note}</li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-xs sm:text-sm text-muted-foreground">
-              {subcategory.additionalNotes}
-            </p>
-          )}
-        </div>
-      )}
     </div>
   );
 };
