@@ -1641,4 +1641,73 @@ export const pricingCategories: Category[] = [
       },
     ],
   },
+  {
+    id: 'dtp',
+    name: 'DTP',
+    description: 'Desktop publishing services including artwork setup, design, and scanning',
+    subcategories: [
+      {
+        id: 'artwork-design',
+        name: 'Artwork Setup & Design',
+        data: [
+          { service: 'Quick Set Up (within 5 minutes)', description: 'Manual enlarging, reducing, cropping, imposing, placing of your artwork or basic typesetting', price: 'R17.00' },
+          { service: 'Tracing Images', description: 'Tracing of images to create cut files for vinyl cutting or transfer cutting', price: 'R30.00' },
+          { service: 'Artwork Set Up - 15 min (Min Cost)', description: 'Making up of any artwork required by a customer', price: 'R150.00' },
+          { service: 'Artwork Set Up - 30 min', description: 'Making up of any artwork required by a customer', price: 'R290.00' },
+          { service: 'Artwork Set Up - 45 min', description: 'Making up of any artwork required by a customer', price: 'R420.00' },
+          { service: 'Artwork Set Up - 60 min', description: 'Making up of any artwork required by a customer', price: 'R500.00' },
+          { service: 'Designing per Hour (Min Cost)', description: 'Designing of logos etc', price: 'R650.00' },
+          { service: 'Typesetting of Pages - English Only', description: 'Typing of letters / CVs - priced per page', price: 'R60.00' },
+          { service: 'High Resolution Image Downloads', description: 'High resolution images from sites like Shutterstock / AdobeStock', price: 'R250.00' },
+        ],
+        columns: [
+          { key: 'service', label: 'Service Type' },
+          { key: 'description', label: 'Description' },
+          { key: 'price', label: 'Price' },
+        ],
+      },
+      {
+        id: 'scanning-services',
+        name: 'Scanning Services',
+        description: 'Scanning options - up to A3 only',
+        data: [
+          { service: 'Scanning & E-mailing/Saving to Flash', description: 'Scanning of your 1st 5 pages. Includes sending the file via e-mail or saving to a drive', price: 'R16.00' },
+          { service: 'Scanning per Page for Additional Pages', description: 'Per page charge for additional scanned pages', price: 'R0.90' },
+          { service: 'Manual Book Scanning', description: 'Manual book scanning per page', price: 'R1.80' },
+        ],
+        columns: [
+          { key: 'service', label: 'Service Type' },
+          { key: 'description', label: 'Description' },
+          { key: 'price', label: 'Price' },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'finishing',
+    name: 'Finishing',
+    description: 'Various finishing services for printed materials',
+    subcategories: [
+      {
+        id: 'finishing-options',
+        name: 'Finishing Options',
+        data: [
+          { service: 'Punching per page', price: 'R0.10', setup_cost: '' },
+          { service: 'Guillotine cutting per 5 min (min R50)', price: 'R50.00', setup_cost: '' },
+          { service: 'Hand cutting per cut', price: 'R0.60', setup_cost: '' },
+          { service: 'Scoring per fold', price: 'R0.50', setup_cost: 'R50.00' },
+          { service: 'Folding paper per fold', price: 'R0.20', setup_cost: 'R50.00' },
+          { service: 'Large eyelets', price: 'R15.00', setup_cost: '' },
+          { service: 'Small eyelets', price: 'R4.00', setup_cost: '' },
+          { service: 'Corner stapling', price: 'R0.60', setup_cost: '' },
+          { service: 'Holes drilled each', price: 'R0.30', setup_cost: 'R50.00' },
+        ],
+        columns: [
+          { key: 'service', label: 'Service Type' },
+          { key: 'price', label: 'Price' },
+          { key: 'setup_cost', label: 'Set Up Cost', sublabel: 'If Required' },
+        ],
+      },
+    ],
+  },
 ];

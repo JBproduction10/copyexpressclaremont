@@ -1,9 +1,10 @@
 // types/pricing.ts
 
 export interface PricingRow {
-  qty: string;
-  discount: string;
+  qty?: string;
+  discount?: string;
   [key: string]: string;
+  service?: string;
 }
 
 export interface ColumnDefinition {
