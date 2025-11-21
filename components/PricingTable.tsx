@@ -1,7 +1,6 @@
-// components/PricingTable.tsx
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { SubCategory } from '@/types/index';
 import Image from 'next/image';
 import { ChevronLeft, ChevronRight, X, ZoomIn } from 'lucide-react';
@@ -13,16 +12,20 @@ interface PricingTableProps {
 
 export const PricingTable: React.FC<PricingTableProps> = ({ subcategory }) => {
   const [modalIndex, setModalIndex] = useState<number | null>(null);
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  // Minimum swipe distance (in px)
+  const minSwipeDistance = 50;
 
   const openModal = (index: number) => {
     setModalIndex(index);
-    // Prevent body scroll when modal is open
     document.body.style.overflow = 'hidden';
   };
 
   const closeModal = () => {
     setModalIndex(null);
-    // Restore body scroll
     document.body.style.overflow = 'unset';
   };
 
@@ -34,6 +37,30 @@ export const PricingTable: React.FC<PricingTableProps> = ({ subcategory }) => {
   const nextImage = () => {
     if (modalIndex === null || !subcategory.images) return;
     setModalIndex((modalIndex + 1) % subcategory.images.length);
+  };
+
+  // Touch handlers for swipe
+  const onTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+
+    if (isLeftSwipe) {
+      nextImage();
+    } else if (isRightSwipe) {
+      prevImage();
+    }
   };
 
   // Keyboard navigation and cleanup
@@ -48,7 +75,6 @@ export const PricingTable: React.FC<PricingTableProps> = ({ subcategory }) => {
 
     window.addEventListener('keydown', handleKeyDown);
     
-    // Cleanup on unmount
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
       document.body.style.overflow = 'unset';
@@ -118,10 +144,14 @@ export const PricingTable: React.FC<PricingTableProps> = ({ subcategory }) => {
         {/* MODAL */}
         {modalIndex !== null && (
           <div 
-            className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+            ref={modalRef}
+            className="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center z-50 overflow-hidden"
             onClick={closeModal}
+            onTouchStart={onTouchStart}
+            onTouchMove={onTouchMove}
+            onTouchEnd={onTouchEnd}
           >
-            {/* CLOSE BUTTON */}
+            {/* CLOSE BUTTON - Always visible */}
             <Button
               onClick={(e) => {
                 e.stopPropagation();
@@ -129,12 +159,12 @@ export const PricingTable: React.FC<PricingTableProps> = ({ subcategory }) => {
               }}
               variant="ghost"
               size="icon"
-              className="absolute top-4 right-4 text-white hover:bg-white/20 rounded-full h-10 w-10"
+              className="absolute top-2 right-2 sm:top-4 sm:right-4 text-white hover:bg-white/20 rounded-full h-10 w-10 z-50"
             >
-              <X className="w-6 h-6" />
+              <X className="w-5 h-5 sm:w-6 sm:h-6" />
             </Button>
 
-            {/* LEFT BUTTON */}
+            {/* LEFT BUTTON - Hidden on mobile */}
             <Button
               onClick={(e) => {
                 e.stopPropagation();
@@ -142,36 +172,41 @@ export const PricingTable: React.FC<PricingTableProps> = ({ subcategory }) => {
               }}
               variant="ghost"
               size="icon"
-              className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 text-white hover:bg-white/20 rounded-full h-12 w-12"
+              className="hidden sm:flex absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 text-white hover:bg-white/20 rounded-full h-12 w-12"
             >
               <ChevronLeft className="w-8 h-8" />
             </Button>
 
-            {/* IMAGE */}
+            {/* IMAGE CONTAINER */}
             <div 
-              className="max-w-6xl max-h-[90vh] w-full"
+              className="w-full h-full flex flex-col items-center justify-center p-4 sm:p-8"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="relative w-full h-[80vh]">
+              {/* Image */}
+              <div className="relative w-full max-w-6xl h-[calc(100vh-120px)] sm:h-[calc(100vh-150px)]">
                 <Image
                   src={subcategory.images[modalIndex].imagePath}
                   alt={subcategory.images[modalIndex].alt}
                   fill
                   className="object-contain"
-                  sizes="90vw"
+                  sizes="100vw"
+                  priority
                 />
               </div>
-              <div className="text-center mt-4 text-white">
-                <p className="text-sm">
+              
+              {/* Info */}
+              <div className="text-center mt-4 text-white space-y-2">
+                <p className="text-sm sm:text-base font-medium">
                   Page {subcategory.images[modalIndex].pageNumber} of {subcategory.images.length}
                 </p>
-                <p className="text-xs text-white/70 mt-1">
-                  Use arrow keys or click arrows to navigate • Press ESC to close
+                <p className="text-xs sm:text-sm text-white/70">
+                  <span className="sm:hidden">Swipe left or right to navigate</span>
+                  <span className="hidden sm:inline">Use arrow keys or click arrows to navigate • Press ESC to close</span>
                 </p>
               </div>
             </div>
 
-            {/* RIGHT BUTTON */}
+            {/* RIGHT BUTTON - Hidden on mobile */}
             <Button
               onClick={(e) => {
                 e.stopPropagation();
@@ -179,7 +214,7 @@ export const PricingTable: React.FC<PricingTableProps> = ({ subcategory }) => {
               }}
               variant="ghost"
               size="icon"
-              className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 text-white hover:bg-white/20 rounded-full h-12 w-12"
+              className="hidden sm:flex absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 text-white hover:bg-white/20 rounded-full h-12 w-12"
             >
               <ChevronRight className="w-8 h-8" />
             </Button>

@@ -5,7 +5,7 @@ import { Category } from '@/types/index';
 export const pricingCategories: Category[] = [
   {
     id: 'a4-a3',
-    name: 'A4 & A3 PRINTS',
+    name: 'A4 & A3 Prints',
     description: 'Professional A4 & A3 printing options for all your document needs',
     subcategories: [
       {
@@ -116,7 +116,7 @@ export const pricingCategories: Category[] = [
   },
   {
     id: 'a5-a6',
-    name: 'A5 & A6 FLYERS',
+    name: 'A5 & A6 Flyers',
     description: 'Professional A5 & A6 Flyers printing options for all your document needs',
     subcategories: [
       {
@@ -270,7 +270,7 @@ export const pricingCategories: Category[] = [
   },
   {
     id: 'binding',
-    name: 'BINDING',
+    name: 'Binding',
     description: 'Professional binding options for all your document needs',
     subcategories: [
       {
@@ -409,7 +409,7 @@ export const pricingCategories: Category[] = [
   },
   {
     id: 'posters-plans',
-    name: 'POSTERS & PLANS',
+    name: 'Posters & Plans',
     description: 'Professional posters and architectural plans printing',
     subcategories: [
       {
@@ -1740,7 +1740,7 @@ export const pricingCategories: Category[] = [
 
 {
   id: 'stamps',
-  name: 'STAMPS',
+  name: 'Stamps',
   description: 'Professional stamp products for business and industry',
   subcategories: [
     {
