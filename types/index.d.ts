@@ -1,10 +1,10 @@
-// types/pricing.ts
+// types/index.ts
 
 export interface PricingRow {
   qty?: string;
   discount?: string;
-  [key: string]: string;
   service?: string;
+  [key: string]: string | undefined;
 }
 
 export interface ColumnDefinition {
@@ -13,15 +13,24 @@ export interface ColumnDefinition {
   sublabel?: string;
 }
 
+export interface ImagePage {
+  pageNumber: number;
+  imagePath: string;
+  alt: string;
+}
+
 export interface SubCategory {
   id: string;
   name: string;
   description?: string;
+  type?: 'table' | 'image-gallery';
+  // For table-based subcategories
   data?: PricingRow[];
   columns?: ColumnDefinition[];
+  // For image-based subcategories
+  images?: ImagePage[];
+  // Common
   additionalNotes?: string[] | string;
-  type?: 'table' | 'image';  // Differentiate content types
-  images?: string[]; 
 }
 
 export interface Category {
@@ -31,6 +40,6 @@ export interface Category {
   subcategories: SubCategory[];
 }
 
-export interface PricingFile{
+export interface PricingData {
   categories: Category[];
 }

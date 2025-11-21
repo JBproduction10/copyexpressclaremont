@@ -1736,73 +1736,119 @@ export const pricingCategories: Category[] = [
       },
     ],
   },
-  {
-    id: 'stamps',
-    name: 'STAMPS',
-    description: 'Professional stamp products for business and industry',
-    subcategories: [
-      {
-        id: 'self-inking-stamps',
-        name: 'Self-Inking Stamps',
-        type: 'image',
-        images: [
-          '/stamps/self-inking-page-1.jpg',
-          '/stamps/self-inking-page-2.jpg',
-          '/stamps/self-inking-page-3.jpg',
-        ],
-        additionalNotes: [
-          'All prices are VAT inclusive',
-          'Text plates are 2mm smaller than stamp size',
-          'Stamps come standard with black pad',
-          'Optional colours available at extra cost: Red, Blue, Green, Violet',
-        ],
-      },
-      {
-        id: 'hand-stamps',
-        name: 'Hand Stamps',
-        type: 'image',
-        images: [
-          '/stamps/hand_stamps_prices.jpg',
-        ],
-        additionalNotes: 'All texts will be 2mm smaller than the handle size',
-      },
-      {
-        id: 'daters-numberers',
-        name: 'Daters & Numberers',
-        type: 'image',
-        images: [
-          '/stamps/daters-numberers.jpg',
-          '/stamps/daters-numberers-2.jpg',
-        ],
-        additionalNotes: [
-          'Professional dater stamps available',
-          'Available in multiple colors: Black, Red, Blue, Green, Violet',
-        ],
-      },
-      {
-        id: 'pre-inked-stamps',
-        name: 'Pre-Inked Stamps',
-        type: 'image',
-        images: [
-          '/stamps/pre-inked-page-1.jpg',
-          '/stamps/pre-inked-page-2.jpg',
-        ],
-        additionalNotes: 'Only available in specific colors as indicated',
-      },
-      {
-        id: 'accessories',
-        name: 'Stamp Accessories',
-        type: 'image',
-        images: [
-          '/stamps/accessories.jpg',
-          '/stamps/accessories-2.jpg',
-          '/stamps/accessories-3.jpg',
-        ],
-        additionalNotes: [
-          'Ink pads available in Black, Red, Blue, Green, Violet and un-inked',
-          'ID Protector available - hide personal information with one roll',
-        ],
-      },
-    ],
-  }
+  // Add this to your pricingData.ts
+
+{
+  id: 'stamps',
+  name: 'STAMPS',
+  description: 'Professional stamp products for business and industry',
+  subcategories: [
+    {
+      id: 'self-inking-stamps',
+      name: 'Self-Inking Stamps',
+      type: 'image-gallery', // Changed from 'image'
+      images: [
+        {
+          pageNumber: 1,
+          imagePath: '/stamps/self-inking-page-1.jpg',
+          alt: 'Self-inking stamps catalog page 1',
+        },
+        {
+          pageNumber: 2,
+          imagePath: '/stamps/self-inking-page-2.jpg',
+          alt: 'Self-inking stamps catalog page 2',
+        },
+        {
+          pageNumber: 3,
+          imagePath: '/stamps/self-inking-page-3.jpg',
+          alt: 'Self-inking stamps catalog page 3',
+        },
+      ],
+      additionalNotes: [
+        'All prices are VAT inclusive',
+        'Text plates are 2mm smaller than stamp size',
+        'Stamps come standard with black pad',
+        'Optional colours available at extra cost: Red, Blue, Green, Violet',
+      ],
+    },
+    {
+      id: 'hand-stamps',
+      name: 'Hand Stamps',
+      type: 'image-gallery',
+      images: [
+        {
+          pageNumber: 1,
+          imagePath: '/stamps/hand_stamps_prices.jpg',
+          alt: 'Hand stamps price list',
+        },
+      ],
+      additionalNotes: 'All texts will be 2mm smaller than the handle size',
+    },
+    {
+      id: 'daters-numberers',
+      name: 'Daters & Numberers',
+      type: 'image-gallery',
+      images: [
+        {
+          pageNumber: 1,
+          imagePath: '/stamps/daters-numberers.jpg',
+          alt: 'Daters and numberers catalog page 1',
+        },
+        {
+          pageNumber: 2,
+          imagePath: '/stamps/daters-numberers-2.jpg',
+          alt: 'Daters and numberers catalog page 2',
+        },
+      ],
+      additionalNotes: [
+        'Professional dater stamps available',
+        'Available in multiple colors: Black, Red, Blue, Green, Violet',
+      ],
+    },
+    {
+      id: 'pre-inked-stamps',
+      name: 'Pre-Inked Stamps',
+      type: 'image-gallery',
+      images: [
+        {
+          pageNumber: 1,
+          imagePath: '/stamps/pre-inked-page-1.jpg',
+          alt: 'Pre-inked stamps catalog page 1',
+        },
+        {
+          pageNumber: 2,
+          imagePath: '/stamps/pre-inked-page-2.jpg',
+          alt: 'Pre-inked stamps catalog page 2',
+        },
+      ],
+      additionalNotes: 'Only available in specific colors as indicated',
+    },
+    {
+      id: 'accessories',
+      name: 'Stamp Accessories',
+      type: 'image-gallery',
+      images: [
+        {
+          pageNumber: 1,
+          imagePath: '/stamps/accessories.jpg',
+          alt: 'Stamp accessories catalog page 1',
+        },
+        {
+          pageNumber: 2,
+          imagePath: '/stamps/accessories-2.jpg',
+          alt: 'Stamp accessories catalog page 2',
+        },
+        {
+          pageNumber: 3,
+          imagePath: '/stamps/accessories-3.jpg',
+          alt: 'Stamp accessories catalog page 3',
+        },
+      ],
+      additionalNotes: [
+        'Ink pads available in Black, Red, Blue, Green, Violet and un-inked',
+        'ID Protector available - hide personal information with one roll',
+      ],
+    },
+  ],
+}
 ];
