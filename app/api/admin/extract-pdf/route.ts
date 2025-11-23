@@ -1,17 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
-import * as pdfParse from 'pdf-parse';
+import * as pdfjsLib from 'pdfjs-dist';
 
-// Type definition for pdf-parse
-type PDFParseFunction = (buffer: Buffer) => Promise<{
-  numpages: number;
-  numrender: number;
-  info: Record<string, unknown>;
-  metadata: Record<string, unknown>;
-  text: string;
-  version: string;
-}>;
+// Configure the worker source
+pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+
+// Type for text content items
+interface TextItem {
+  str: string;
+  dir: string;
+  width: number;
+  height: number;
+  transform: number[];
+  fontName: string;
+}
+
+interface TextMarkedContent {
+  type: string;
+}
 
 // POST extract data from PDF
 export async function POST(req: NextRequest) {
@@ -43,22 +50,42 @@ export async function POST(req: NextRequest) {
     }
 
     const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
+    const typedArray = new Uint8Array(arrayBuffer);
 
-    const pdfData = await (pdfParse as unknown as PDFParseFunction)(buffer);
+    // Load the PDF document
+    const loadingTask = pdfjsLib.getDocument({ data: typedArray });
+    const pdf = await loadingTask.promise;
 
-    // Extract text content
-    const extractedText = pdfData.text;
+    let fullText = '';
+    const numPages = pdf.numPages;
+
+    // Extract text from each page
+    for (let pageNum = 1; pageNum <= numPages; pageNum++) {
+      const page = await pdf.getPage(pageNum);
+      const textContent = await page.getTextContent();
+      
+      // Extract text from items
+      const pageText = textContent.items
+        .map((item) => {
+          if ('str' in item) {
+            return (item as TextItem).str;
+          }
+          return '';
+        })
+        .join(' ');
+      
+      fullText += pageText + '\n';
+    }
 
     // Parse the text to extract pricing data
-    const parsedData = parsePricingData(extractedText);
+    const parsedData = parsePricingData(fullText);
 
     return NextResponse.json({
       success: true,
       data: {
-        rawText: extractedText,
+        rawText: fullText,
         parsedData,
-        pages: pdfData.numpages,
+        pages: numPages,
       },
     });
   } catch (error: unknown) {
