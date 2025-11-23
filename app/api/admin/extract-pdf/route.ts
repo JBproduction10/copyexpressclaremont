@@ -105,5 +105,5 @@ function parsePricingData(text: string) {
     }
   });
 
-  return data;
+  return data; // return everything
 }
