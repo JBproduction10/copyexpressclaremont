@@ -5,9 +5,10 @@ import connectDB from '@/lib/mongodb';
 import PricingCategory from '@/lib/models/PricingCategory';
 
 // GET all categories
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
     await connectDB();
+    
     const categories = await PricingCategory.find({}).sort({ createdAt: -1 });
 
     return NextResponse.json({
@@ -43,7 +44,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: true,
       data: category,
-    }, { status: 201 });
+    });
   } catch (error: unknown) {
     console.error('Error creating category:', error);
     return NextResponse.json(
