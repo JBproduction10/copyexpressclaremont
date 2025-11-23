@@ -1,27 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
-import * as pdfjsLib from 'pdfjs-dist';
+import { PDFParse } from 'pdf-parse';
+import type { TextResult } from 'pdf-parse';
 
-// Configure the worker source
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
-
-// Type for text content items
-interface TextItem {
-  str: string;
-  dir: string;
-  width: number;
-  height: number;
-  transform: number[];
-  fontName: string;
-}
-
-interface TextMarkedContent {
-  type: string;
-}
+export const runtime = 'nodejs';
 
 // POST extract data from PDF
 export async function POST(req: NextRequest) {
+  let parser: PDFParse | null = null;
+
   try {
     const session = await getServerSession(authOptions);
 
@@ -50,42 +38,29 @@ export async function POST(req: NextRequest) {
     }
 
     const arrayBuffer = await file.arrayBuffer();
-    const typedArray = new Uint8Array(arrayBuffer);
+    const buffer = Buffer.from(arrayBuffer);
 
-    // Load the PDF document
-    const loadingTask = pdfjsLib.getDocument({ data: typedArray });
-    const pdf = await loadingTask.promise;
+    // Initialize PDF parser with buffer
+    parser = new PDFParse({ data: buffer });
 
-    let fullText = '';
-    const numPages = pdf.numPages;
+    // Extract text from PDF
+    const result: TextResult = await parser.getText();
 
-    // Extract text from each page
-    for (let pageNum = 1; pageNum <= numPages; pageNum++) {
-      const page = await pdf.getPage(pageNum);
-      const textContent = await page.getTextContent();
-      
-      // Extract text from items
-      const pageText = textContent.items
-        .map((item) => {
-          if ('str' in item) {
-            return (item as TextItem).str;
-          }
-          return '';
-        })
-        .join(' ');
-      
-      fullText += pageText + '\n';
-    }
+    // Get PDF info for page count
+    const info = await parser.getInfo();
+
+    // Extract text content
+    const extractedText = result.text;
 
     // Parse the text to extract pricing data
-    const parsedData = parsePricingData(fullText);
+    const parsedData = parsePricingData(extractedText);
 
     return NextResponse.json({
       success: true,
       data: {
-        rawText: fullText,
+        rawText: extractedText,
         parsedData,
-        pages: numPages,
+        pages: info.total,
       },
     });
   } catch (error: unknown) {
@@ -94,6 +69,11 @@ export async function POST(req: NextRequest) {
       { success: false, error: 'Failed to extract PDF data' },
       { status: 500 }
     );
+  } finally {
+    // Always destroy the parser to free memory
+    if (parser) {
+      await parser.destroy();
+    }
   }
 }
 
