@@ -1,6 +1,6 @@
-// Next.js
+// app/layout.tsx
 import type { Metadata } from "next";
-import { Inter} from "next/font/google";
+import { Inter } from "next/font/google";
 
 // Global CSS
 import "./globals.css";
@@ -20,8 +20,11 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <body className={`${interFont.className} antialiased`}>
+    <html lang="en" suppressHydrationWarning>
+      <body 
+        className={`${interFont.className} antialiased`}
+        suppressHydrationWarning
+      >
         <SessionProvider>
           <Providers>
             {children}

@@ -1,4 +1,4 @@
-//api/services/[id]
+// app/api/services/[id]/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import Service from "@/lib/models/Service";
@@ -8,17 +8,18 @@ import { requireAuth } from "@/lib/auth-middleware";
 // GET single service
 export async function GET(
     request: NextRequest,
-    {params}: {params: {id: string}}
+    { params }: { params: Promise<{ id: string }> }
 ) {
-    try{
+    try {
+        const { id } = await params; // FIXED: Await params
         await connectDB();
         
-        const service = await Service.findOne({id: params.id}).lean();
+        const service = await Service.findOne({ id }).lean();
         
-        if(!service){
+        if (!service) {
             return NextResponse.json(
-                {message: 'Service not found'},
-                {status: 404}
+                { message: 'Service not found' },
+                { status: 404 }
             );
         }
 
@@ -26,11 +27,11 @@ export async function GET(
             success: true,
             service
         });
-    }catch(error){
+    } catch (error) {
         console.error('Error fetching service:', error);
         return NextResponse.json(
-            {message: 'Failed to fetch service'},
-            {status: 500}
+            { message: 'Failed to fetch service' },
+            { status: 500 }
         );
     }
 }
@@ -38,48 +39,50 @@ export async function GET(
 // PUT - Update service
 export async function PUT(
     request: NextRequest,
-    {params}: {params: {id: string}}
+    { params }: { params: Promise<{ id: string }> }
 ) {
-    try{
+    try {
+        const { id } = await params; // FIXED: Await params
         const session = await requireAuth(request);
-            if (session instanceof NextResponse) return session;
+        if (session instanceof NextResponse) return session;
 
         await connectDB();
 
         const body = await request.json();
 
         const service = await Service.findOneAndUpdate(
-            {id: params.id},
-            {$set: body},
-            {new: true, runValidators: true}
+            { id },
+            { $set: body },
+            { new: true, runValidators: true }
         );
 
-        if(!service){
+        if (!service) {
             return NextResponse.json(
-                {message: 'Service not found'},
-                {status: 404}
+                { message: 'Service not found' },
+                { status: 404 }
             );
         }
 
-        // Log activity
+        // FIXED: Added email field from session
         await ActivityLog.create({
             userId: session.user.id,
             username: session.user.username,
+            email: session.user.email, // ADDED
             action: 'update',
             targetType: 'service',
             targetId: service.id,
-            details: {updates: Object.keys(body)}
+            details: { updates: Object.keys(body) }
         });
 
         return NextResponse.json({
             success: true,
             service
         });
-    }catch(error){
+    } catch (error) {
         console.error('Error updating service:', error);
         return NextResponse.json(
-            {message: 'Failed to update service'},
-            {status: 500}
+            { message: 'Failed to update service' },
+            { status: 500 }
         );
     }
 }
@@ -87,30 +90,32 @@ export async function PUT(
 // DELETE service
 export async function DELETE(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const { id } = await params; // FIXED: Await params
         const session = await requireAuth(request);
-    if (session instanceof NextResponse) return session;
+        if (session instanceof NextResponse) return session;
 
         await connectDB();
         
-        const service = await Service.findOneAndDelete({ id: params.id });
+        const service = await Service.findOneAndDelete({ id });
 
         if (!service) {
-        return NextResponse.json(
-            { message: 'Service not found' },
-            { status: 404 }
-        );
+            return NextResponse.json(
+                { message: 'Service not found' },
+                { status: 404 }
+            );
         }
 
-        // Log activity
+        // FIXED: Added email field from session
         await ActivityLog.create({
             userId: session.user.id,
             username: session.user.username,
+            email: session.user.email,
             action: 'delete',
             targetType: 'service',
-            targetId: params.id,
+            targetId: id,
             details: { title: service.title }
         });
 

@@ -60,7 +60,7 @@ const About = () => {
           </div>
 
           <div className="relative animate-fade-in">
-            <div className="aspect-square bg-linear-to-br from-primary to-accent rounded-2xl p-8 flex items-center justify-center">
+            <div className="aspect-square bg-primary rounded-2xl p-8 flex items-center justify-center">
               <div className="text-center text-primary-foreground">
                 <div className="text-6xl font-bold mb-4">{aboutData.statisticNumber}</div>
                 <div className="text-2xl mb-2">{aboutData.statisticLabel}</div>

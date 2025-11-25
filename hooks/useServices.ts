@@ -1,11 +1,16 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 // hooks/useServices.ts
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
 
-export const useServices = (activeOnly = false) => {
-  const { data: session } = useSession();
-  const [services, setServices] = useState([]);
+interface UseServicesOptions {
+  activeOnly?: boolean;
+  autoFetch?: boolean;
+}
+
+export const useServices = (options: UseServicesOptions = {}) => {
+  const { activeOnly = false, autoFetch = true } = options;
+  
+  const [services, setServices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -22,18 +27,19 @@ export const useServices = (activeOnly = false) => {
       setError(null);
     } catch (err: any) {
       setError(err.message);
+      setServices([]);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchServices();
-  }, []);
+    if (autoFetch) {
+      fetchServices();
+    }
+  }, [activeOnly]);
 
   const createService = async (service: any) => {
-    if (!session) throw new Error('Not authenticated');
-
     const response = await fetch('/api/services', {
       method: 'POST',
       headers: {
@@ -50,8 +56,6 @@ export const useServices = (activeOnly = false) => {
   };
 
   const updateService = async (id: string, updates: any) => {
-    if (!session) throw new Error('Not authenticated');
-
     const response = await fetch(`/api/services/${id}`, {
       method: 'PUT',
       headers: {
@@ -66,8 +70,6 @@ export const useServices = (activeOnly = false) => {
   };
 
   const deleteService = async (id: string) => {
-    if (!session) throw new Error('Not authenticated');
-
     const response = await fetch(`/api/services/${id}`, {
       method: 'DELETE'
     });
@@ -78,8 +80,6 @@ export const useServices = (activeOnly = false) => {
   };
 
   const reorderServices = async (serviceIds: string[]) => {
-    if (!session) throw new Error('Not authenticated');
-
     const response = await fetch('/api/services/reorder', {
       method: 'PUT',
       headers: {

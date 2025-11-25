@@ -1,13 +1,88 @@
-//components
+//components/Pricing.tsx
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { PricingTable } from "./PricingTable";
-import { pricingCategories } from "@/data/pricingData";
+import { useState, useEffect } from "react";
+import { Category } from "@/types";
 
 const Pricing = () => {
-    return(
+    const [categories, setCategories] = useState<Category[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        fetchAllCategories();
+    }, []);
+
+    // Fetch all categories without pagination for public pricing page
+    const fetchAllCategories = async () => {
+        try {
+            setLoading(true);
+            // Fetch with a high limit to get all categories at once
+            // For public display, we want all pricing available
+            const response = await fetch('/api/categories?limit=1000');
+            
+            if (!response.ok) {
+                throw new Error('Failed to fetch categories');
+            }
+            
+            const data = await response.json();
+            setCategories(data.categories);
+            setError(null);
+        } catch (err) {
+            console.error('Error fetching categories:', err);
+            setError('Failed to load pricing data');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    if (loading) {
+        return (
+            <section id="prices" className="py-20 bg-background">
+                <div className="container mx-auto px-6">
+                    <div className="text-center">
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+                        <p className="text-gray-600">Loading pricing data...</p>
+                    </div>
+                </div>
+            </section>
+        );
+    }
+
+    if (error) {
+        return (
+            <section id="prices" className="py-20 bg-background">
+                <div className="container mx-auto px-6">
+                    <div className="text-center text-red-500">
+                        <p>{error}</p>
+                        <button 
+                            onClick={fetchAllCategories}
+                            className="mt-4 px-4 py-2 bg-primary text-white rounded hover:bg-primary/90"
+                        >
+                            Retry
+                        </button>
+                    </div>
+                </div>
+            </section>
+        );
+    }
+
+    if (categories.length === 0) {
+        return (
+            <section id="prices" className="py-20 bg-background">
+                <div className="container mx-auto px-6">
+                    <div className="text-center text-gray-600">
+                        <p>No pricing data available yet.</p>
+                    </div>
+                </div>
+            </section>
+        );
+    }
+
+    return (
         <section id="prices" className="py-20 bg-background">
             <div className="container mx-auto px-6">
                 <div className="text-center mb-16 animate-fade-in">
@@ -20,12 +95,12 @@ const Pricing = () => {
                 </div>
 
                 <div className="w-full max-w-7xl mx-auto">
-                    <Tabs defaultValue={pricingCategories[0].id} className="w-full">
+                    <Tabs defaultValue={categories[0]?.id} className="w-full">
                         {/* Main Category Tabs - Scrollable on mobile */}
                         <div className="relative mb-6">
                             <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0 pb-2">
                                 <TabsList className="inline-flex w-auto min-w-full sm:grid sm:w-full sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-1 h-auto p-1 bg-muted">
-                                    {pricingCategories.map((category) => (
+                                    {categories.map((category) => (
                                         <TabsTrigger
                                             key={category.id}
                                             value={category.id}
@@ -39,7 +114,7 @@ const Pricing = () => {
                         </div>
                         
                         {/* Category Content */}
-                        {pricingCategories.map((category) => (
+                        {categories.map((category) => (
                             <TabsContent key={category.id} value={category.id} className="mt-0">
                                 <Card className="mb-6">
                                     <CardHeader className="space-y-2 pb-4">
@@ -47,7 +122,7 @@ const Pricing = () => {
                                         <CardDescription className="text-sm sm:text-base">{category.description}</CardDescription>
                                     </CardHeader>
                                     <CardContent className="pt-0">
-                                        <Tabs defaultValue={category.subcategories[0].id} className="w-full">
+                                        <Tabs defaultValue={category.subcategories[0]?.id} className="w-full">
                                             {/* Subcategory Tabs - Adaptive grid based on count */}
                                             <div className="relative mb-6">
                                                 <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0 pb-2">
@@ -102,7 +177,7 @@ const Pricing = () => {
                 </div>
             </div>
         </section>
-    )
-}
+    );
+};
 
 export default Pricing;

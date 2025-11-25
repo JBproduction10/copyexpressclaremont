@@ -1,54 +1,54 @@
-//scripts
+// scripts/seedPricingData.ts
+import dotenv from "dotenv";
+dotenv.config({ path: ".env"});
+
 import mongoose from 'mongoose';
-import User from '../lib/models/User';
+import Category from '../lib/models/Category';
+import { pricingCategories } from '../data/pricingData';
 
 const MONGODB_URI = process.env.MONGODB_URI!;
 
-async function seedAdmin() {
+async function seedPricingData() {
   try {
-    console.log('🌱 Starting admin seed...');
+    console.log('🌱 Starting pricing data seed...');
     
     // Connect to MongoDB
     await mongoose.connect(MONGODB_URI);
     console.log('✅ Connected to MongoDB');
 
-    // Check if admin exists
-    const existingAdmin = await User.findOne({ username: 'admin' });
-    
-    if (existingAdmin) {
-      console.log('ℹ️  Admin user already exists');
-      console.log('   Username:', existingAdmin.username);
-      console.log('   Email:', existingAdmin.email);
-      console.log('   Role:', existingAdmin.role);
-      
-      // Update password if needed
-      existingAdmin.password = 'admin123';
-      await existingAdmin.save();
-      console.log('✅ Admin password reset to: admin123');
-    } else {
-      // Create admin user
-      const admin = await User.create({
-        username: 'admin',
-        email: 'admin@copyexpress.com',
-        password: 'admin123',
-        role: 'admin',
-        isActive: true
-      });
+    // Clear existing categories (optional - comment out if you want to preserve existing data)
+    // await Category.deleteMany({});
+    // console.log('🗑️  Cleared existing categories');
 
-      console.log('✅ Admin user created successfully:');
-      console.log('   Username:', admin.username);
-      console.log('   Email:', admin.email);
-      console.log('   Password: admin123');
-      console.log('   Role:', admin.role);
-    }
+    // Seed all categories from pricingData.ts
+    const results = await Promise.all(
+      pricingCategories.map(async (category) => {
+        const existingCategory = await Category.findOne({ id: category.id });
+        
+        if (existingCategory) {
+          // Update existing category
+          const updated = await Category.findOneAndUpdate(
+            { id: category.id },
+            { $set: category },
+            { new: true, runValidators: true }
+          );
+          console.log(`✅ Updated category: ${category.name}`);
+          return updated;
+        } else {
+          // Create new category
+          const created = await Category.create(category);
+          console.log(`✅ Created category: ${category.name}`);
+          return created;
+        }
+      })
+    );
 
-    console.log('\n🎉 Seed completed successfully!');
-    console.log('\nYou can now login with:');
-    console.log('Username: admin');
-    console.log('Password: admin123');
+    console.log(`\n🎉 Seed completed successfully!`);
+    console.log(`📊 Total categories processed: ${results.length}`);
+    console.log(`📋 Total subcategories: ${results.reduce((acc, cat) => acc + (cat?.subcategories?.length || 0), 0)}`);
     
   } catch (error) {
-    console.error('❌ Error seeding admin:', error);
+    console.error('❌ Error seeding pricing data:', error);
     throw error;
   } finally {
     await mongoose.disconnect();
@@ -56,7 +56,7 @@ async function seedAdmin() {
   }
 }
 
-seedAdmin()
+seedPricingData()
   .then(() => process.exit(0))
   .catch((error) => {
     console.error(error);

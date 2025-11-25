@@ -1,22 +1,44 @@
-//api/categories
+/* eslint-disable @typescript-eslint/no-explicit-any */
+// app/api/categories/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import Category from '@/lib/models/Category';
 import ActivityLog from '@/lib/models/ActivityLog';
 import { requireAuth } from "@/lib/auth-middleware";
 
-// GET all categories
 export async function GET(request: NextRequest) {
   try {
     await connectDB();
     
-    const categories = await Category.find()
+    const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '4');
+    const search = searchParams.get('search') || '';
+    
+    const query: any = {};
+    if (search) {
+      query.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { description: { $regex: search, $options: 'i' } }
+      ];
+    }
+    
+    const total = await Category.countDocuments(query);
+    const categories = await Category.find(query)
       .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit)
       .lean();
 
     return NextResponse.json({
       success: true,
-      categories
+      categories,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit)
+      }
     });
   } catch (error) {
     console.error('Error fetching categories:', error);
@@ -27,14 +49,12 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST - Create new category
 export async function POST(request: NextRequest) {
   try {
     const session = await requireAuth(request);
     if (session instanceof NextResponse) return session;
 
     await connectDB();
-    
     const body = await request.json();
     
     const category = await Category.create({
@@ -44,10 +64,10 @@ export async function POST(request: NextRequest) {
       subcategories: body.subcategories || []
     });
 
-    // Log activity
     await ActivityLog.create({
       userId: session.user.id,
       username: session.user.username,
+      email: session.user.email, // FIXED: Added email
       action: 'create',
       targetType: 'category',
       targetId: category.id,

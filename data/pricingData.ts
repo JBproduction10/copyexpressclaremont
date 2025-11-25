@@ -1443,6 +1443,38 @@ export const pricingCategories: Category[] = [
     ],
   },
   {
+    id: 'fabric',
+    name: 'Fabric',
+    description: 'Coated fabric printing services - Minimum order A2 size',
+    subcategories: [
+      {
+        id: 'coated-fabric-printing',
+        name: 'Coated Fabric Printing',
+        description: 'Line work/wording with no background colour and photos/images with solid background options',
+        data: [
+          { qty: '1-5', linework_a2: 'R140.0', linework_a1: 'R240.0', linework_a0: 'R450.0', linework_sqm: 'R500.0', photo_a2: 'R210.0', photo_a1: 'R360.0', photo_a0: 'R675.0', photo_sqm: 'R750.0', discount: '' },
+          { qty: '6-10', linework_a2: 'R123.2', linework_a1: 'R211.2', linework_a0: 'R396.0', linework_sqm: 'R440.0', photo_a2: 'R184.8', photo_a1: 'R316.8', photo_a0: 'R594.0', photo_sqm: 'R660.0', discount: '12%' },
+          { qty: '11-15', linework_a2: 'R117.6', linework_a1: 'R201.6', linework_a0: 'R378.0', linework_sqm: 'R420.0', photo_a2: 'R176.4', photo_a1: 'R302.4', photo_a0: 'R567.0', photo_sqm: 'R630.0', discount: '16%' },
+          { qty: '16-20', linework_a2: 'R105.0', linework_a1: 'R180.0', linework_a0: 'R337.5', linework_sqm: 'R375.0', photo_a2: 'R157.5', photo_a1: 'R270.0', photo_a0: 'R506.3', photo_sqm: 'R562.5', discount: '25%' },
+          { qty: '21-30', linework_a2: 'R98.0', linework_a1: 'R168.0', linework_a0: 'R315.0', linework_sqm: 'R350.0', photo_a2: 'R147.0', photo_a1: 'R252.0', photo_a0: 'R472.5', photo_sqm: 'R525.0', discount: '30%' },
+          { qty: '31-50', linework_a2: 'R91.0', linework_a1: 'R156.0', linework_a0: 'R292.5', linework_sqm: 'R325.0', photo_a2: 'R136.5', photo_a1: 'R234.0', photo_a0: 'R438.8', photo_sqm: 'R487.5', discount: '35%' },
+          { qty: 'BULK', linework_a2: 'R84.0', linework_a1: 'R144.0', linework_a0: 'R270.0', linework_sqm: 'R300.0', photo_a2: 'R126.0', photo_a1: 'R216.0', photo_a0: 'R405.0', photo_sqm: 'R450.0', discount: '40%' },
+        ],
+        columns: [
+          { key: 'linework_a2', label: 'Line Work A2', sublabel: 'No Background' },
+          { key: 'linework_a1', label: 'Line Work A1', sublabel: 'No Background' },
+          { key: 'linework_a0', label: 'Line Work A0', sublabel: 'No Background' },
+          { key: 'linework_sqm', label: 'Line Work', sublabel: 'Per Sq Meter' },
+          { key: 'photo_a2', label: 'Photo A2', sublabel: 'Solid Background' },
+          { key: 'photo_a1', label: 'Photo A1', sublabel: 'Solid Background' },
+          { key: 'photo_a0', label: 'Photo A0', sublabel: 'Solid Background' },
+          { key: 'photo_sqm', label: 'Photo', sublabel: 'Per Sq Meter' },
+        ],
+        additionalNotes: 'Square meter price for custom sizes bigger than A2 - cannot be less than an A2 price. Minimum order: A2 size.',
+      },
+    ],
+  },
+  {
     id: 'non-tear-paper',
     name: 'Non-Tear Paper',
     description: 'Non-tear paper printing services - Minimum order A2 size',

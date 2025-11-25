@@ -1,4 +1,3 @@
-//api/import-export/export
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import Category from '@/lib/models/Category';
@@ -11,13 +10,12 @@ export async function GET(request: NextRequest) {
     if (session instanceof NextResponse) return session;
 
     await connectDB();
-    
     const categories = await Category.find().lean();
 
-    // Log activity
     await ActivityLog.create({
       userId: session.user.id,
       username: session.user.username,
+      email: session.user.email,
       action: 'export',
       targetType: 'category',
       details: { count: categories.length }
