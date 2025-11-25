@@ -18,6 +18,7 @@ export interface IImagePage {
   pageNumber: number;
   imagePath: string;
   alt: string;
+  publicId: string;
 }
 
 export interface ISubCategory extends Document {
@@ -54,7 +55,8 @@ const PricingRowSchema = new Schema<IPricingRow>({}, {
 const ImagePageSchema = new Schema<IImagePage>({
   pageNumber: { type: Number, required: true },
   imagePath: { type: String, required: true },
-  alt: { type: String, required: true }
+  alt: { type: String, required: true },
+  publicId: { type: String }
 }, { _id: false });
 
 const SubCategorySchema = new Schema<ISubCategory>({

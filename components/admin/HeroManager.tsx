@@ -189,7 +189,7 @@ export const HeroManager: React.FC<HeroManagerProps> = ({ hero, onUpdate }) => {
             <div className="space-y-6">
               <div>
                 <h3 className="text-lg font-semibold mb-2">Preview</h3>
-                <div className="p-6 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-lg text-white">
+                <div className="p-6 bg-linear-to-br from-slate-900 via-slate-800 to-slate-900 rounded-lg text-white">
                   <h1 className="text-4xl font-bold mb-4">
                     {hero.title} <span className="text-primary">{hero.highlightedText}</span>
                   </h1>

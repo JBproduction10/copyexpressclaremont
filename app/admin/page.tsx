@@ -12,6 +12,7 @@ import { Header } from '@/components/admin/Header';
 import { DashboardStats } from '@/components/admin/DashboardStats';
 import { QuickActions } from '@/components/admin/QuickActions';
 import { CategoryList } from '@/components/admin/CategoryList';
+import { CategorySearch } from '@/components/admin/CategorySearch';
 import { DataEditor } from '@/components/admin/DataEditor';
 import { ImportExport } from '@/components/admin/ImportExport';
 import { ServiceManager } from '@/components/admin/ServiceManager';
@@ -36,20 +37,31 @@ const AdminCRUD: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCategories, setTotalCategories] = useState(0);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const { notification, showNotification } = useNotification();
 
-  // Fetch categories
-  const fetchCategories = async (page: number = 1) => {
+  // Fetch categories with search support
+  const fetchCategories = async (page: number = 1, search: string = '') => {
     try {
       setLoading(true);
-      const res = await fetch(`/api/categories?page=${page}&limit=${CATEGORIES_PER_PAGE}`);
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: CATEGORIES_PER_PAGE.toString(),
+        ...(search && { search })
+      });
+      
+      const res = await fetch(`/api/categories?${params}`);
       if (!res.ok) throw new Error('Failed to fetch categories');
       const data = await res.json();
       setCategories(data.categories);
       setTotalPages(data.pagination.pages);
       setTotalCategories(data.pagination.total);
-      showNotification('Categories loaded successfully');
+      showNotification(
+        search 
+          ? `Found ${data.pagination.total} matching categories` 
+          : 'Categories loaded successfully'
+      );
     } catch (error) {
       console.error(error);
       showNotification('Failed to load categories', 'error');
@@ -59,8 +71,15 @@ const AdminCRUD: React.FC = () => {
   };
 
   useEffect(() => {
-    if (status === 'authenticated') fetchCategories(currentPage);
+    if (status === 'authenticated') fetchCategories(currentPage, searchQuery);
   }, [status, currentPage]);
+
+  // Search handler
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+    setCurrentPage(1); // Reset to first page on new search
+    fetchCategories(1, query);
+  };
 
   // Category CRUD operations
   const addCategory = async () => {
@@ -77,7 +96,7 @@ const AdminCRUD: React.FC = () => {
         body: JSON.stringify(newCategory),
       });
       if (!res.ok) throw new Error('Failed to create category');
-      await fetchCategories(currentPage);
+      await fetchCategories(currentPage, searchQuery);
       showNotification('Category added successfully');
     } catch (error) {
       console.error(error);
@@ -93,7 +112,7 @@ const AdminCRUD: React.FC = () => {
         body: JSON.stringify(updates),
       });
       if (!res.ok) throw new Error('Failed to update category');
-      await fetchCategories(currentPage);
+      await fetchCategories(currentPage, searchQuery);
       showNotification('Category updated successfully');
     } catch (error) {
       console.error(error);
@@ -106,7 +125,14 @@ const AdminCRUD: React.FC = () => {
     try {
       const res = await fetch(`/api/categories/${id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Failed to delete category');
-      await fetchCategories(currentPage);
+      
+      // If deleting last item on page and not first page, go to previous page
+      if (categories.length === 1 && currentPage > 1) {
+        setCurrentPage(currentPage - 1);
+        await fetchCategories(currentPage - 1, searchQuery);
+      } else {
+        await fetchCategories(currentPage, searchQuery);
+      }
       showNotification('Category deleted successfully');
     } catch (error) {
       console.error(error);
@@ -261,7 +287,7 @@ const AdminCRUD: React.FC = () => {
           body: JSON.stringify({ categories: data, replaceAll: false }),
         });
         if (!res.ok) throw new Error('Import failed');
-        await fetchCategories(currentPage);
+        await fetchCategories(currentPage, searchQuery);
         showNotification('Data imported successfully');
       } catch (error) {
         console.error(error);
@@ -296,30 +322,38 @@ const AdminCRUD: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           {/* Tab Navigation */}
-          <TabsList className="grid w-full grid-cols-8">
-            <TabsTrigger value="dashboard" className="flex items-center gap-2">
-              <BarChart3 className="w-4 h-4" /> Dashboard
+          <TabsList className="inline-flex w-auto min-w-full sm:grid sm:grid-cols-4 lg:grid-cols-8 h-auto gap-1">
+            <TabsTrigger value="dashboard" className="flex items-center justify-center gap-1.5 sm:gap-2 whitespace-nowrap px-2.5 sm:px-4 py-2.5 text-xs sm:text-sm">
+              <BarChart3 className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+              <span className="hidden xs:inline">Dashboard</span>
             </TabsTrigger>
-            <TabsTrigger value="services" className="flex items-center gap-2">
-              <Briefcase className="w-4 h-4" /> Services
+            <TabsTrigger value="services" className="flex items-center justify-center gap-1.5 sm:gap-2 whitespace-nowrap px-2.5 sm:px-4 py-2.5 text-xs sm:text-sm">
+              <Briefcase className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+              <span className="hidden xs:inline">Services</span>
             </TabsTrigger>
-            <TabsTrigger value="categories" className="flex items-center gap-2">
-              <Settings className="w-4 h-4" /> Categories
+            <TabsTrigger value="categories" className="flex items-center justify-center gap-1.5 sm:gap-2 whitespace-nowrap px-2.5 sm:px-4 py-2.5 text-xs sm:text-sm">
+              <Settings className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+              <span className="hidden xs:inline">Categories</span>
             </TabsTrigger>
-            <TabsTrigger value="data" className="flex items-center gap-2">
-              <Edit className="w-4 h-4" /> Edit Data
+            <TabsTrigger value="data" className="flex items-center justify-center gap-1.5 sm:gap-2 whitespace-nowrap px-2.5 sm:px-4 py-2.5 text-xs sm:text-sm">
+              <Edit className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+              <span className="hidden xs:inline">Data</span>
             </TabsTrigger>
-            <TabsTrigger value="about" className="flex items-center gap-2">
-              <Settings className="w-4 h-4" /> About
+            <TabsTrigger value="about" className="flex items-center justify-center gap-1.5 sm:gap-2 whitespace-nowrap px-2.5 sm:px-4 py-2.5 text-xs sm:text-sm">
+              <Settings className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+              <span className="hidden xs:inline">About</span>
             </TabsTrigger>
-            <TabsTrigger value="contact" className="flex items-center gap-2">
-              <Settings className="w-4 h-4" /> Contact
+            <TabsTrigger value="contact" className="flex items-center justify-center gap-1.5 sm:gap-2 whitespace-nowrap px-2.5 sm:px-4 py-2.5 text-xs sm:text-sm">
+              <Settings className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+              <span className="hidden xs:inline">Contact</span>
             </TabsTrigger>
-            <TabsTrigger value="hero" className="flex items-center gap-2">
-              <Settings className="w-4 h-4" /> Hero
+            <TabsTrigger value="hero" className="flex items-center justify-center gap-1.5 sm:gap-2 whitespace-nowrap px-2.5 sm:px-4 py-2.5 text-xs sm:text-sm">
+              <Settings className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+              <span className="hidden xs:inline">Hero</span>
             </TabsTrigger>
-            <TabsTrigger value="import-export" className="flex items-center gap-2">
-              <Download className="w-4 h-4" /> Import/Export
+            <TabsTrigger value="import-export" className="flex items-center justify-center gap-1.5 sm:gap-2 whitespace-nowrap px-2.5 sm:px-4 py-2.5 text-xs sm:text-sm">
+              <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+              <span className="hidden xs:inline">Import</span>
             </TabsTrigger>
           </TabsList>
 
@@ -368,6 +402,19 @@ const AdminCRUD: React.FC = () => {
           </TabsContent>
 
           <TabsContent value="categories" className="space-y-6">
+            {/* Search Component */}
+            <CategorySearch 
+              onSearch={handleSearch}
+              placeholder="Search categories by name or description..."
+            />
+
+            {/* Results Summary */}
+            {searchQuery && (
+              <div className="text-sm text-gray-600 bg-blue-50 border border-blue-200 rounded-lg p-3">
+                Showing {categories.length} of {totalCategories} categories matching &quot;{searchQuery}&quot;
+              </div>
+            )}
+
             <CategoryList
               categories={categories}
               editingItem={editingItem}
@@ -444,7 +491,6 @@ const AdminCRUD: React.FC = () => {
                 Next
               </button>
             </div>
-
           </TabsContent>
 
           <TabsContent value="data" className="space-y-6">
@@ -545,6 +591,7 @@ const AdminCRUD: React.FC = () => {
               />
             )}
           </TabsContent>
+          
           <TabsContent value="hero" className="space-y-6">
             {heroLoading ? (
               <div className="text-center py-12">
