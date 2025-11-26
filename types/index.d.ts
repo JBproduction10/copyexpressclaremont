@@ -14,10 +14,10 @@ export interface ColumnDefinition {
 }
 
 export interface ImagePage {
-  [x: string]: string;
   pageNumber: number;
   imagePath: string;
   alt: string;
+  publicId?: string;
 }
 
 export interface SubCategory {
