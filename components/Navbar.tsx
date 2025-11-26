@@ -4,10 +4,12 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
+import Image from "next/image";
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [hasLogo, setHasLogo] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -15,6 +17,19 @@ const Navbar = () => {
     };
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // Check if logo exists
+  useEffect(() => {
+    const checkLogo = async () => {
+      try {
+        const response = await fetch('/logo.png', { method: 'HEAD' });
+        setHasLogo(response.ok);
+      } catch {
+        setHasLogo(false);
+      }
+    };
+    checkLogo();
   }, []);
 
   const scrollToSection = (id: string) => {
@@ -43,12 +58,25 @@ const Navbar = () => {
         <div className="flex items-center justify-between">
           <button 
             onClick={() => scrollToSection("hero")}
-            className="text-2xl font-bold"
+            className="flex items-center gap-2"
             aria-label="Go to homepage"
           >
-            <span className={isScrolled ? "text-foreground" : "text-primary-foreground"}>
-              Copy<span className="text-primary">Express</span>
-            </span>
+            {hasLogo ? (
+              <div className="relative h-10 w-auto">
+                <Image
+                  src="/logo.png"
+                  alt="CopyExpress Claremont Logo"
+                  width={120}
+                  height={40}
+                  className="object-contain"
+                  priority
+                />
+              </div>
+            ) : (
+              <span className={`text-2xl font-bold ${isScrolled ? "text-foreground" : "text-primary-foreground"}`}>
+                Copy<span className="text-primary">Express</span>
+              </span>
+            )}
           </button>
 
           {/* Desktop Navigation */}
