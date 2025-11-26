@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 // app/admin/page.tsx
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
@@ -6,7 +7,7 @@ import React, { useState, useEffect } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import { redirect } from 'next/navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { BarChart3, Settings, Edit, Download, Briefcase } from 'lucide-react';
+import { BarChart3, Settings, Edit, Download, Briefcase, Mail } from 'lucide-react';
 import { Notification } from '@/components/admin/Notification';
 import { Header } from '@/components/admin/Header';
 import { DashboardStats } from '@/components/admin/DashboardStats';
@@ -25,6 +26,8 @@ import { useServices } from '@/hooks/useServices';
 import { useAbout } from '@/hooks/useAbout';
 import { useContact } from '@/hooks/useContact';
 import { useHero } from '@/hooks/useHero';
+import { EmailSettingsManager } from '@/components/admin/EmailSettingsManager';
+import { useEmailSettings } from '@/hooks/useEmailSettings';
 
 const CATEGORIES_PER_PAGE = 4;
 
@@ -73,6 +76,19 @@ const AdminCRUD: React.FC = () => {
   useEffect(() => {
     if (status === 'authenticated') fetchCategories(currentPage, searchQuery);
   }, [status, currentPage]);
+
+  // Listen for refetch events from child components
+  useEffect(() => {
+    const handleRefetch = () => {
+      fetchCategories(currentPage, searchQuery);
+    };
+
+    window.addEventListener('refetchCategories', handleRefetch);
+    
+    return () => {
+      window.removeEventListener('refetchCategories', handleRefetch);
+    };
+  }, [currentPage, searchQuery]);
 
   // Search handler
   const handleSearch = (query: string) => {
@@ -157,6 +173,7 @@ const AdminCRUD: React.FC = () => {
     showNotification('Subcategory added successfully');
   };
 
+  // Update subcategory function with proper state management
   const updateSubcategory = async (categoryId: string, subId: string, updates: any) => {
     const category = categories.find(c => c.id === categoryId);
     if (!category) return;
@@ -164,8 +181,31 @@ const AdminCRUD: React.FC = () => {
     const updatedSubs = category.subcategories.map((sub: any) => 
       sub.id === subId ? { ...sub, ...updates } : sub
     );
-    await updateCategory(categoryId, { subcategories: updatedSubs });
-    showNotification('Subcategory updated successfully');
+    
+    try {
+      const res = await fetch(`/api/categories/${categoryId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subcategories: updatedSubs }),
+      });
+      
+      if (!res.ok) throw new Error('Failed to update subcategory');
+      
+      // Update local state immediately
+      setCategories(prevCategories => 
+        prevCategories.map(cat => 
+          cat.id === categoryId 
+            ? { ...cat, subcategories: updatedSubs }
+            : cat
+        )
+      );
+      
+      showNotification('Subcategory updated successfully');
+    } catch (error) {
+      console.error(error);
+      showNotification('Failed to update subcategory', 'error');
+      throw error; // Re-throw to handle in child components
+    }
   };
 
   const deleteSubcategory = async (categoryId: string, subId: string) => {
@@ -177,7 +217,9 @@ const AdminCRUD: React.FC = () => {
     showNotification('Subcategory deleted successfully');
   };
 
-  // Data editor hooks
+  //=============HOOKS============
+
+  // Data editor hooks with the updated updateSubcategory
   const {
     selectedCategory,
     selectedSubcategory,
@@ -189,6 +231,7 @@ const AdminCRUD: React.FC = () => {
     addColumn,
     updateColumn,
     deleteColumn,
+    localData,
   } = useDataEditor(categories, updateSubcategory, showNotification);
 
   // Services management
@@ -223,7 +266,6 @@ const AdminCRUD: React.FC = () => {
     updateContactInfo,
     deleteContactInfo,
     reorderContactInfo,
-    refetch: refetchContact
   } = useContact(session?.user?.id || null);
 
   // Hero management
@@ -232,8 +274,16 @@ const AdminCRUD: React.FC = () => {
     loading: heroLoading,
     error: heroError,
     updateHero,
-    refetch: refetchHero
   } = useHero(session?.user?.id || null);
+
+  // SMTP Email management
+  const {
+    settings: emailSettings,
+    loading: emailLoading,
+    error: emailError,
+    saveSettings: saveEmailSettings,
+    sendTestEmail,
+  } = useEmailSettings();
 
   // Authentication check
   if (status === 'loading' || loading) {
@@ -350,6 +400,10 @@ const AdminCRUD: React.FC = () => {
             <TabsTrigger value="hero" className="flex items-center justify-center gap-1.5 sm:gap-2 whitespace-nowrap px-2.5 sm:px-4 py-2.5 text-xs sm:text-sm">
               <Settings className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
               <span className="hidden xs:inline">Hero</span>
+            </TabsTrigger>
+            <TabsTrigger value="email" className="flex items-center justify-center gap-1.5 sm:gap-2 whitespace-nowrap px-2.5 sm:px-4 py-2.5 text-xs sm:text-sm">
+              <Mail className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+              <span className="hidden xs:inline">Email</span>
             </TabsTrigger>
             <TabsTrigger value="import-export" className="flex items-center justify-center gap-1.5 sm:gap-2 whitespace-nowrap px-2.5 sm:px-4 py-2.5 text-xs sm:text-sm">
               <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
@@ -509,6 +563,8 @@ const AdminCRUD: React.FC = () => {
               onAddColumn={addColumn}
               onUpdateColumn={updateColumn}
               onDeleteColumn={deleteColumn}
+              onUpdateSubcategory={updateSubcategory}
+              localData={localData}
             />
           </TabsContent>
 
@@ -603,11 +659,51 @@ const AdminCRUD: React.FC = () => {
             ) : (
               <HeroManager
                 hero={hero}
-                onUpdate={wrapServiceHandler(
-                  () => updateHero({}),
-                  'Hero updated',
-                  'Failed to update hero'
-                )}
+                onUpdate={async (updates) => {
+                  try {
+                    await updateHero(updates);
+                    showNotification('Hero updated successfully');
+                  } catch (error) {
+                    console.error('Error updating hero:', error);
+                    showNotification('Failed to update hero', 'error');
+                  }
+                }}
+              />
+            )}
+          </TabsContent>
+
+          <TabsContent value="email" className="space-y-6">
+            {emailLoading ? (
+              <div className="text-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+                <p className="text-gray-600">Loading email settings...</p>
+              </div>
+            ) : emailError ? (
+              <div className="text-center py-12 text-red-500">{emailError}</div>
+            ) : (
+              <EmailSettingsManager
+                settings={emailSettings}
+                loading={emailLoading}
+                onSave={async (settings) => {
+                  try {
+                    await saveEmailSettings(settings);
+                    showNotification('Email settings saved successfully');
+                    return { success: true };
+                  } catch (error: any) {
+                    showNotification(error.message || 'Failed to save email settings', 'error');
+                    throw error;
+                  }
+                }}
+                onTestEmail={async (email) => {
+                  try {
+                    await sendTestEmail(email);
+                    showNotification('Test email sent successfully');
+                    return { success: true };
+                  } catch (error: any) {
+                    showNotification(error.message || 'Failed to send test email', 'error');
+                    throw error;
+                  }
+                }}
               />
             )}
           </TabsContent>

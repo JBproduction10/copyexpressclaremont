@@ -10,6 +10,7 @@ export interface IHero extends Document {
   secondaryButtonText: string;
   secondaryButtonAction: string;
   backgroundImage: string;
+  backgroundImagePublicId?: string;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -50,6 +51,10 @@ const HeroSchema = new Schema<IHero>({
   backgroundImage: {
     type: String,
     default: '/copyexpresshero.jpeg'
+  },
+  backgroundImagePublicId: {
+    type: String,
+    required: false
   },
   isActive: {
     type: Boolean,

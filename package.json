@@ -12,7 +12,8 @@
     "seed:services": "tsx scripts/seedServices.ts",
     "seed:contact": "tsx scripts/seedContact.ts",
     "seed:hero": "tsx scripts/seedHero.ts",
-    "seed:all": "npm run seed:admin && npm run seed:pricing && npm run seed:services && npm run seed:contact && npm run seed:hero"
+    "seed:email": "tsx scripts/seedEmailSettings.ts",
+    "seed:all": "npm run seed:admin && npm run seed:pricing && npm run seed:services && npm run seed:contact && npm run seed:hero && npm run seed:email"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

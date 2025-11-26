@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // scripts/seedPricingData.ts
 import dotenv from "dotenv";
 dotenv.config({ path: ".env"});
@@ -25,18 +26,36 @@ async function seedPricingData() {
       pricingCategories.map(async (category) => {
         const existingCategory = await Category.findOne({ id: category.id });
         
+        // Process subcategories to ensure image galleries have proper structure
+        const processedCategory = {
+          ...category,
+          subcategories: category.subcategories.map(sub => {
+            if (sub.type === 'image-gallery' && sub.images) {
+              return {
+                ...sub,
+                images: sub.images.map(img => ({
+                  ...img,
+                  // Ensure publicId is set (empty for initial seed, will be filled on upload)
+                  publicId: img.publicId || ''
+                }))
+              };
+            }
+            return sub;
+          })
+        };
+        
         if (existingCategory) {
           // Update existing category
           const updated = await Category.findOneAndUpdate(
             { id: category.id },
-            { $set: category },
+            { $set: processedCategory },
             { new: true, runValidators: true }
           );
           console.log(`✅ Updated category: ${category.name}`);
           return updated;
         } else {
           // Create new category
-          const created = await Category.create(category);
+          const created = await Category.create(processedCategory);
           console.log(`✅ Created category: ${category.name}`);
           return created;
         }
@@ -46,6 +65,12 @@ async function seedPricingData() {
     console.log(`\n🎉 Seed completed successfully!`);
     console.log(`📊 Total categories processed: ${results.length}`);
     console.log(`📋 Total subcategories: ${results.reduce((acc, cat) => acc + (cat?.subcategories?.length || 0), 0)}`);
+    
+    // Count image galleries
+    const imageGalleries = results.reduce((acc, cat) => {
+      return acc + (cat?.subcategories?.filter((sub: any) => sub.type === 'image-gallery').length || 0);
+    }, 0);
+    console.log(`🖼️  Total image galleries: ${imageGalleries}`);
     
   } catch (error) {
     console.error('❌ Error seeding pricing data:', error);

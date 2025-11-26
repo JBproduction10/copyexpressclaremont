@@ -1,21 +1,59 @@
-//hooks
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useState } from 'react';
+import { useState, useCallback, useRef } from 'react';
 
 export const useDataEditor = (
   categories: any[],
-  updateSubcategory: (catId: string, subId: string, updates: any) => void,
+  updateSubcategory: (catId: string, subId: string, updates: any) => Promise<void>,
   onNotify: (msg: string) => void
 ) => {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
+  const [localData, setLocalData] = useState<any>(null);
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const pendingUpdatesRef = useRef<any>(null);
 
-  const addDataRow = () => {
+  // Debounced save function
+  const debouncedSave = useCallback(
+    (categoryId: string, subId: string, updates: any) => {
+      // Clear existing timeout
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+
+      // Merge with pending updates
+      pendingUpdatesRef.current = {
+        ...pendingUpdatesRef.current,
+        ...updates
+      };
+
+      // Set new timeout
+      saveTimeoutRef.current = setTimeout(async () => {
+        try {
+          await updateSubcategory(categoryId, subId, pendingUpdatesRef.current);
+          pendingUpdatesRef.current = null;
+          onNotify('Changes saved');
+        } catch (error) {
+          console.error('Error saving:', error);
+          onNotify('Failed to save changes');
+        }
+      }, 1000); // Wait 1 second after last change
+    },
+    [updateSubcategory, onNotify]
+  );
+
+  // Get current subcategory data
+  const getCurrentSubcategory = useCallback(() => {
+    if (!selectedCategory || !selectedSubcategory) return null;
+    
+    const category = categories.find(c => c.id === selectedCategory);
+    return category?.subcategories.find((s: any) => s.id === selectedSubcategory);
+  }, [categories, selectedCategory, selectedSubcategory]);
+
+  const addDataRow = async () => {
     if (!selectedCategory || !selectedSubcategory) return;
 
-    const category = categories.find(c => c.id === selectedCategory);
-    const subcategory = category?.subcategories.find((s: any) => s.id === selectedSubcategory);
-    
+    const subcategory = getCurrentSubcategory();
     if (!subcategory) return;
 
     const newRow: any = { qty: '1-5' };
@@ -23,81 +61,110 @@ export const useDataEditor = (
       newRow[col.key] = 'R0.0';
     });
 
-    updateSubcategory(selectedCategory, selectedSubcategory, {
-      data: [...(subcategory.data || []), newRow]
-    });
-    onNotify('Row added successfully');
+    const newData = [...(subcategory.data || []), newRow];
+    
+    // Optimistic update
+    setLocalData(newData);
+
+    try {
+      await updateSubcategory(selectedCategory, selectedSubcategory, { data: newData });
+      onNotify('Row added successfully');
+    } catch (error) {
+      console.error('Error adding row:', error);
+      setLocalData(null);
+      onNotify('Failed to add row');
+    }
   };
 
   const updateDataRow = (rowIndex: number, updates: any) => {
     if (!selectedCategory || !selectedSubcategory) return;
 
-    const category = categories.find(c => c.id === selectedCategory);
-    const subcategory = category?.subcategories.find((s: any) => s.id === selectedSubcategory);
-    
+    const subcategory = getCurrentSubcategory();
     if (!subcategory) return;
 
-    const newData = [...(subcategory.data || [])];
+    const currentData = localData || subcategory.data || [];
+    const newData = [...currentData];
     newData[rowIndex] = { ...newData[rowIndex], ...updates };
 
-    updateSubcategory(selectedCategory, selectedSubcategory, { data: newData });
+    // Immediate local update
+    setLocalData(newData);
+
+    // Debounced save
+    debouncedSave(selectedCategory, selectedSubcategory, { data: newData });
   };
 
-  const deleteDataRow = (rowIndex: number) => {
+  const deleteDataRow = async (rowIndex: number) => {
     if (!selectedCategory || !selectedSubcategory) return;
     if (!window.confirm('Are you sure you want to delete this row?')) return;
 
-    const category = categories.find(c => c.id === selectedCategory);
-    const subcategory = category?.subcategories.find((s: any) => s.id === selectedSubcategory);
-    
+    const subcategory = getCurrentSubcategory();
     if (!subcategory) return;
 
-    const newData = subcategory.data.filter((_: any, i: number) => i !== rowIndex);
-    updateSubcategory(selectedCategory, selectedSubcategory, { data: newData });
-    onNotify('Row deleted successfully');
+    const newData = (localData || subcategory.data || []).filter((_: any, i: number) => i !== rowIndex);
+    
+    // Clear pending saves
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+    pendingUpdatesRef.current = null;
+
+    // Optimistic update
+    setLocalData(newData);
+
+    try {
+      await updateSubcategory(selectedCategory, selectedSubcategory, { data: newData });
+      onNotify('Row deleted successfully');
+    } catch (error) {
+      console.error('Error deleting row:', error);
+      setLocalData(null);
+      onNotify('Failed to delete row');
+    }
   };
 
-  const addColumn = (columnData: { key: string; label: string; sublabel?: string }) => {
+  const addColumn = async (columnData: { key: string; label: string; sublabel?: string }) => {
     if (!selectedCategory || !selectedSubcategory) return;
 
-    const category = categories.find(c => c.id === selectedCategory);
-    const subcategory = category?.subcategories.find((s: any) => s.id === selectedSubcategory);
-    
+    const subcategory = getCurrentSubcategory();
     if (!subcategory) return;
 
-    // Add column to columns array
     const newColumns = [...(subcategory.columns || []), columnData];
-
-    // Add the new column key to all existing rows with default value
-    const newData = (subcategory.data || []).map((row: any) => ({
+    const newData = (localData || subcategory.data || []).map((row: any) => ({
       ...row,
       [columnData.key]: 'R0.0'
     }));
 
-    updateSubcategory(selectedCategory, selectedSubcategory, {
-      columns: newColumns,
-      data: newData
-    });
-    onNotify('Column added successfully');
+    // Clear pending saves
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+    pendingUpdatesRef.current = null;
+
+    try {
+      await updateSubcategory(selectedCategory, selectedSubcategory, {
+        columns: newColumns,
+        data: newData
+      });
+      setLocalData(newData);
+      onNotify('Column added successfully');
+    } catch (error) {
+      console.error('Error adding column:', error);
+      onNotify('Failed to add column');
+    }
   };
 
-  const updateColumn = (columnIndex: number, updates: { key: string; label: string; sublabel?: string }) => {
+  const updateColumn = async (columnIndex: number, updates: { key: string; label: string; sublabel?: string }) => {
     if (!selectedCategory || !selectedSubcategory) return;
 
-    const category = categories.find(c => c.id === selectedCategory);
-    const subcategory = category?.subcategories.find((s: any) => s.id === selectedSubcategory);
-    
+    const subcategory = getCurrentSubcategory();
     if (!subcategory || !subcategory.columns) return;
 
     const oldKey = subcategory.columns[columnIndex].key;
     const newKey = updates.key;
 
-    // Update columns array
     const newColumns = [...subcategory.columns];
     newColumns[columnIndex] = updates;
 
-    // If key changed, update all data rows
-    let newData = subcategory.data || [];
+    let newData = localData || subcategory.data || [];
     if (oldKey !== newKey) {
       newData = newData.map((row: any) => {
         const { [oldKey]: oldValue, ...rest } = row;
@@ -108,45 +175,83 @@ export const useDataEditor = (
       });
     }
 
-    updateSubcategory(selectedCategory, selectedSubcategory, {
-      columns: newColumns,
-      data: newData
-    });
-    onNotify('Column updated successfully');
+    // Clear pending saves
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+    pendingUpdatesRef.current = null;
+
+    try {
+      await updateSubcategory(selectedCategory, selectedSubcategory, {
+        columns: newColumns,
+        data: newData
+      });
+      setLocalData(newData);
+      onNotify('Column updated successfully');
+    } catch (error) {
+      console.error('Error updating column:', error);
+      onNotify('Failed to update column');
+    }
   };
 
-  const deleteColumn = (columnIndex: number) => {
+  const deleteColumn = async (columnIndex: number) => {
     if (!selectedCategory || !selectedSubcategory) return;
     if (!window.confirm('Are you sure you want to delete this column? This will remove all data in this column.')) return;
 
-    const category = categories.find(c => c.id === selectedCategory);
-    const subcategory = category?.subcategories.find((s: any) => s.id === selectedSubcategory);
-    
+    const subcategory = getCurrentSubcategory();
     if (!subcategory || !subcategory.columns) return;
 
     const columnKey = subcategory.columns[columnIndex].key;
-
-    // Remove column from columns array
     const newColumns = subcategory.columns.filter((_: any, i: number) => i !== columnIndex);
-
-    // Remove column data from all rows
-    const newData = (subcategory.data || []).map((row: any) => {
+    const newData = (localData || subcategory.data || []).map((row: any) => {
       const { [columnKey]: removed, ...rest } = row;
       return rest;
     });
 
-    updateSubcategory(selectedCategory, selectedSubcategory, {
-      columns: newColumns,
-      data: newData
-    });
-    onNotify('Column deleted successfully');
+    // Clear pending saves
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+    pendingUpdatesRef.current = null;
+
+    try {
+      await updateSubcategory(selectedCategory, selectedSubcategory, {
+        columns: newColumns,
+        data: newData
+      });
+      setLocalData(newData);
+      onNotify('Column deleted successfully');
+    } catch (error) {
+      console.error('Error deleting column:', error);
+      onNotify('Failed to delete column');
+    }
+  };
+
+  // Reset local data when selection changes
+  const handleCategoryChange = (categoryId: string) => {
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+    pendingUpdatesRef.current = null;
+    setLocalData(null);
+    setSelectedCategory(categoryId);
+  };
+
+  const handleSubcategoryChange = (subId: string | null) => {
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+    pendingUpdatesRef.current = null;
+    setLocalData(null);
+    setSelectedSubcategory(subId);
   };
 
   return {
     selectedCategory,
     selectedSubcategory,
-    setSelectedCategory,
-    setSelectedSubcategory,
+    setSelectedCategory: handleCategoryChange,
+    setSelectedSubcategory: handleSubcategoryChange,
+    localData,
     addDataRow,
     updateDataRow,
     deleteDataRow,

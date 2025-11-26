@@ -1,5 +1,9 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+// app/api/contact/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import nodemailer from 'nodemailer';
+import connectDB from '@/lib/mongodb';
+import EmailSettings from '@/lib/models/EmailSettings';
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,22 +18,54 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create transporter with Gmail
+    // Connect to database and get email settings
+    await connectDB();
+    const settings = await EmailSettings.findOne({ isActive: true });
+
+    if (!settings) {
+      console.error('Email settings not configured');
+      return NextResponse.json(
+        { message: 'Email service not configured. Please contact administrator.' },
+        { status: 500 }
+      );
+    }
+
+    // If in test mode, log but don't send
+    if (settings.testMode) {
+      console.log('TEST MODE - Email not sent:', {
+        to: [settings.adminEmail, email],
+        from: settings.fromEmail,
+        name,
+        service,
+        message
+      });
+      
+      return NextResponse.json(
+        { 
+          message: 'Test mode: Email logged but not sent',
+          testMode: true 
+        },
+        { status: 200 }
+      );
+    }
+
+    // Create transporter with settings from database
     const transporter = nodemailer.createTransport({
-      host: 'smtp.gmail.com',
-      port: 587,
-      secure: false,
+      host: settings.smtpHost,
+      port: settings.smtpPort,
+      secure: settings.smtpSecure,
       auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASSWORD,
+        user: settings.smtpUser,
+        pass: settings.smtpPassword,
       },
     });
 
     // Email to admin
     const adminMailOptions = {
-      from: process.env.EMAIL_USER,
-      to: 'jbangala90@gmail.com',
-      subject: `New Quote Request from ${name}`,
+      from: `${settings.fromName} <${settings.fromEmail}>`,
+      to: settings.adminEmail,
+      replyTo: email,
+      subject: settings.adminSubject.replace('{name}', name),
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2 style="color: #ff7849;">New Quote Request</h2>
@@ -49,9 +85,10 @@ export async function POST(request: NextRequest) {
 
     // Email to customer (confirmation)
     const customerMailOptions = {
-      from: process.env.EMAIL_USER,
+      from: `${settings.fromName} <${settings.fromEmail}>`,
       to: email,
-      subject: 'We received your quote request - CopyExpress Claremont',
+      replyTo: settings.replyToEmail,
+      subject: settings.customerSubject,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2 style="color: #ff7849;">Thank You for Contacting Us!</h2>
@@ -66,27 +103,30 @@ export async function POST(request: NextRequest) {
           </div>
           <p>If you have any urgent questions, feel free to contact us directly:</p>
           <ul>
-            <li>Phone: +27 (0) 21 140 3228</li>
-            <li>WhatsApp: +27 66 292 4870</li>
-            <li>Email: info@copyexpressclaremont.com</li>
+            <li>Email: ${settings.replyToEmail}</li>
           </ul>
-          <p>Best regards,<br><strong>CopyExpress Claremont Team</strong></p>
+          <p>Best regards,<br><strong>${settings.fromName} Team</strong></p>
         </div>
       `,
     };
 
     // Send both emails
-    await transporter.sendMail(adminMailOptions);
-    await transporter.sendMail(customerMailOptions);
+    await Promise.all([
+      transporter.sendMail(adminMailOptions),
+      transporter.sendMail(customerMailOptions)
+    ]);
 
     return NextResponse.json(
       { message: 'Email sent successfully' },
       { status: 200 }
     );
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error sending email:', error);
     return NextResponse.json(
-      { message: 'Failed to send email' },
+      { 
+        message: 'Failed to send email',
+        error: error.message 
+      },
       { status: 500 }
     );
   }

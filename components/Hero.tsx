@@ -1,26 +1,85 @@
-//components
 'use client';
 
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
-import heroBg from "@/assets/copyexpresshero.jpeg";
 import Image from "next/image";
+import { useEffect, useState } from "react";
+
+interface HeroData {
+  title: string;
+  highlightedText: string;
+  subtitle: string;
+  primaryButtonText: string;
+  primaryButtonAction: string;
+  secondaryButtonText: string;
+  secondaryButtonAction: string;
+  backgroundImage: string;
+  isActive: boolean;
+}
 
 const Hero = () => {
+  const [heroData, setHeroData] = useState<HeroData | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchHeroData();
+  }, []);
+
+  const fetchHeroData = async () => {
+    try {
+      const response = await fetch('/api/hero?active=true');
+      if (!response.ok) throw new Error('Failed to fetch hero data');
+      const data = await response.json();
+      setHeroData(data.hero);
+    } catch (error) {
+      console.error('Error fetching hero data:', error);
+      // Fallback to default values if fetch fails
+      setHeroData({
+        title: 'CopyExpress',
+        highlightedText: 'Claremont',
+        subtitle: 'Your One-Stop Print Shop for Everything from Lamination to Custom Apparel',
+        primaryButtonText: 'Get a Quote',
+        primaryButtonAction: 'contact',
+        secondaryButtonText: 'Our Services',
+        secondaryButtonAction: 'services',
+        backgroundImage: '/copyexpresshero.jpeg',
+        isActive: true
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const scrollToSection = (id: string) => {
     const element = document.getElementById(id);
     element?.scrollIntoView({ behavior: "smooth" });
   };
 
+  if (loading) {
+    return (
+      <section className="relative min-h-screen flex items-center justify-center bg-gray-100">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </section>
+    );
+  }
+
+  if (!heroData || !heroData.isActive) {
+    return null;
+  }
+
   return (
     <section id="hero" className="relative min-h-screen flex items-center justify-center overflow-hidden">
       {/* Background Image with Overlay */}
       <div className="absolute inset-0 z-0">
-        <Image
-          src={heroBg} 
-          alt="Professional printing services" 
-          className="w-full h-full object-cover"
-        />
+        {heroData.backgroundImage && (
+          <Image
+            src={heroData.backgroundImage}
+            alt="Professional printing services"
+            fill
+            className="object-cover"
+            priority
+          />
+        )}
         <div className="absolute inset-0 bg-linear-to-br from-secondary/95 via-secondary/85 to-primary/90" />
       </div>
 
@@ -28,26 +87,26 @@ const Hero = () => {
       <div className="relative z-10 container mx-auto px-6 text-center">
         <div className="animate-fade-in">
           <h1 className="text-5xl md:text-7xl font-bold text-primary-foreground mb-6">
-            CopyExpress <span className="text-primary">Claremont</span>
+            {heroData.title} <span className="text-primary">{heroData.highlightedText}</span>
           </h1>
           <p className="text-xl md:text-2xl text-primary-foreground/90 mb-8 max-w-2xl mx-auto">
-            Your One-Stop Print Shop for Everything from Lamination to Custom Apparel
+            {heroData.subtitle}
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button 
               size="lg" 
-              className="bg-primary hover:bg-primary-glow text-primary-foreground shadow-(--shadow-glow) transition-all duration-300 hover:scale-105"
-              onClick={() => scrollToSection("contact")}
+              className="bg-primary hover:bg-primary-glow text-primary-foreground shadow-glow transition-all duration-300 hover:scale-105"
+              onClick={() => scrollToSection(heroData.primaryButtonAction)}
             >
-              Get a Quote <ArrowRight className="ml-2 h-5 w-5" />
+              {heroData.primaryButtonText} <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
             <Button 
               size="lg" 
               variant="outline"
               className="border-primary-foreground text-primary-foreground hover:bg-primary-foreground hover:text-secondary"
-              onClick={() => scrollToSection("services")}
+              onClick={() => scrollToSection(heroData.secondaryButtonAction)}
             >
-              Our Services
+              {heroData.secondaryButtonText}
             </Button>
           </div>
         </div>

@@ -1,11 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-//components/admin
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, Edit, Trash2, X } from 'lucide-react';
+import { Plus, Edit, Trash2, X, Image as ImageIcon } from 'lucide-react';
 
 interface CategoryListProps {
   categories: any[];
@@ -89,7 +88,20 @@ export const CategoryList: React.FC<CategoryListProps> = ({
                 <div className="grid gap-2">
                   {category.subcategories.map((sub: any) => (
                     <div key={sub.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <span className="font-medium text-sm">{sub.name}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-sm">{sub.name}</span>
+                        {sub.type === 'image-gallery' && (
+                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded">
+                            <ImageIcon className="w-3 h-3" />
+                            {sub.images?.length || 0} images
+                          </span>
+                        )}
+                        {sub.type === 'table' && (
+                          <span className="text-xs text-gray-500">
+                            {sub.data?.length || 0} rows
+                          </span>
+                        )}
+                      </div>
                       <div className="flex gap-2">
                         <Button
                           size="sm"
