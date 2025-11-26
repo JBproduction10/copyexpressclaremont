@@ -1,4 +1,5 @@
-//components/Pricing.tsx
+/* eslint-disable react-hooks/exhaustive-deps */
+// components/Pricing.tsx - Updated with real-time updates
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
@@ -6,22 +7,21 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/
 import { PricingTable } from "./PricingTable";
 import { useState, useEffect } from "react";
 import { Category } from "@/types";
+import { realtimeEvents } from '@/lib/realtime-events';
 
 const Pricing = () => {
     const [categories, setCategories] = useState<Category[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [lastUpdate, setLastUpdate] = useState<number>(Date.now());
+    const [isRefreshing, setIsRefreshing] = useState(false);
 
-    useEffect(() => {
-        fetchAllCategories();
-    }, []);
-
-    // Fetch all categories without pagination for public pricing page
     const fetchAllCategories = async () => {
         try {
+            const wasLoading = loading;
+            if (!wasLoading) setIsRefreshing(true);
+            
             setLoading(true);
-            // Fetch with a high limit to get all categories at once
-            // For public display, we want all pricing available
             const response = await fetch('/api/categories?limit=1000');
             
             if (!response.ok) {
@@ -31,15 +31,29 @@ const Pricing = () => {
             const data = await response.json();
             setCategories(data.categories);
             setError(null);
+            setLastUpdate(Date.now());
         } catch (err) {
             console.error('Error fetching categories:', err);
             setError('Failed to load pricing data');
         } finally {
             setLoading(false);
+            setIsRefreshing(false);
         }
     };
 
-    if (loading) {
+    useEffect(() => {
+        fetchAllCategories();
+
+        // Listen for real-time updates
+        const unsubscribe = realtimeEvents.on('categories:update', () => {
+            console.log('[Pricing Component] Detected update, refetching...');
+            fetchAllCategories();
+        });
+
+        return () => unsubscribe();
+    }, []);
+
+    if (loading && categories.length === 0) {
         return (
             <section id="prices" className="py-20 bg-background">
                 <div className="container mx-auto px-6">
@@ -94,9 +108,16 @@ const Pricing = () => {
                     </p>
                 </div>
 
-                <div className="w-full max-w-7xl mx-auto">
+                {/* Show loading indicator during refresh */}
+                {isRefreshing && (
+                    <div className="fixed bottom-4 right-4 bg-white shadow-lg rounded-lg p-3 flex items-center gap-2 z-50 animate-fade-in">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                        <span className="text-sm text-gray-600">Updating prices...</span>
+                    </div>
+                )}
+
+                <div className="w-full max-w-7xl mx-auto" key={lastUpdate}>
                     <Tabs defaultValue={categories[0]?.id} className="w-full">
-                        {/* Main Category Tabs - Scrollable on mobile */}
                         <div className="relative mb-6">
                             <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0 pb-2">
                                 <TabsList className="inline-flex w-auto min-w-full sm:grid sm:w-full sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-1 h-auto p-1 bg-muted">
@@ -113,7 +134,6 @@ const Pricing = () => {
                             </div>
                         </div>
                         
-                        {/* Category Content */}
                         {categories.map((category) => (
                             <TabsContent key={category.id} value={category.id} className="mt-0">
                                 <Card className="mb-6">
@@ -123,7 +143,6 @@ const Pricing = () => {
                                     </CardHeader>
                                     <CardContent className="pt-0">
                                         <Tabs defaultValue={category.subcategories[0]?.id} className="w-full">
-                                            {/* Subcategory Tabs - Adaptive grid based on count */}
                                             <div className="relative mb-6">
                                                 <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0 pb-2">
                                                     <TabsList 
@@ -147,7 +166,6 @@ const Pricing = () => {
                                                 </div>
                                             </div>
 
-                                            {/* Subcategory Content */}
                                             {category.subcategories.map((sub) => (
                                                 <TabsContent key={sub.id} value={sub.id} className="mt-0">
                                                     <Card>

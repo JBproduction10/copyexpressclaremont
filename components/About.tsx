@@ -1,23 +1,22 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-// components/About.tsx - SEO Enhanced
+// components/About.tsx - Updated with real-time updates
 'use client';
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { CheckCircle } from "lucide-react";
 import { useState, useEffect } from "react";
+import { realtimeEvents } from '@/lib/realtime-events';
 
 const About = () => {
   const [aboutData, setAboutData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchAbout();
-  }, []);
+  const [lastUpdate, setLastUpdate] = useState<number>(Date.now());
 
   const fetchAbout = async () => {
     try {
       const response = await fetch('/api/about?active=true');
       const data = await response.json();
       setAboutData(data.about);
+      setLastUpdate(Date.now());
     } catch (error) {
       console.error('Error fetching about:', error);
     } finally {
@@ -25,11 +24,26 @@ const About = () => {
     }
   };
 
+  useEffect(() => {
+    fetchAbout();
+
+    // Listen for real-time updates
+    const unsubscribe = realtimeEvents.on('about:update', () => {
+      console.log('[About Component] Detected update, refetching...');
+      fetchAbout();
+    });
+
+    return () => unsubscribe();
+  }, []);
+
   if (loading) {
     return (
       <section id="about" className="py-20 bg-muted" aria-label="About section loading">
         <div className="container mx-auto px-6">
-          <div className="text-center">Loading...</div>
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading...</p>
+          </div>
         </div>
       </section>
     );
@@ -44,6 +58,7 @@ const About = () => {
       id="about" 
       className="py-20 bg-muted"
       aria-labelledby="about-heading"
+      key={lastUpdate} // Force re-render on update
     >
       <div className="container mx-auto px-6">
         <div className="grid md:grid-cols-2 gap-12 items-center">
@@ -56,7 +71,7 @@ const About = () => {
             </p>
             <ul className="grid grid-cols-1 sm:grid-cols-2 gap-4" role="list">
               {aboutData.features?.map((feature: any) => (
-                <li key={feature.id} className="flex items-center gap-3">
+                <li key={feature.id} className="flex items-center gap-3 animate-fade-in">
                   <CheckCircle className="w-5 h-5 text-primary shrink-0" aria-hidden="true" />
                   <span className="text-foreground">{feature.text}</span>
                 </li>

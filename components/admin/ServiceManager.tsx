@@ -1,18 +1,18 @@
+// components/admin/ServiceManager.tsx - Updated to emit events
 'use client';
-//components/admin
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Plus, Edit, Trash2, Save, X, GripVertical, Eye, EyeOff } from 'lucide-react';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Plus, Edit, Trash2, GripVertical, Eye, EyeOff } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { realtimeEvents } from '@/lib/realtime-events';
 
-// Available Lucide icons for services
 const AVAILABLE_ICONS = [
   'Printer', 'Shield', 'Shirt', 'Coffee', 'Sticker', 'FileText', 
   'Scissors', 'Sparkles', 'Package', 'PenTool', 'Image', 'Palette',
@@ -93,6 +93,10 @@ export const ServiceManager: React.FC<ServiceManagerProps> = ({
           ...formData
         });
       }
+      
+      // Emit real-time event
+      realtimeEvents.emit('services:update');
+      
       handleCloseDialog();
     } catch (error) {
       console.error('Error saving service:', error);
@@ -123,11 +127,27 @@ export const ServiceManager: React.FC<ServiceManagerProps> = ({
 
     const serviceIds = newServices.map(s => s.id);
     await onReorder(serviceIds);
+    
+    // Emit real-time event
+    realtimeEvents.emit('services:update');
+    
     setDraggedItem(null);
   };
 
   const handleToggleActive = async (service: any) => {
     await onUpdate(service.id, { isActive: !service.isActive });
+    
+    // Emit real-time event
+    realtimeEvents.emit('services:update');
+  };
+
+  const handleDelete = async (id: string) => {
+    if (window.confirm('Delete this service?')) {
+      await onDelete(id);
+      
+      // Emit real-time event
+      realtimeEvents.emit('services:update');
+    }
   };
 
   return (
@@ -195,11 +215,7 @@ export const ServiceManager: React.FC<ServiceManagerProps> = ({
                   <Button
                     size="sm"
                     variant="destructive"
-                    onClick={() => {
-                      if (window.confirm('Delete this service?')) {
-                        onDelete(service.id);
-                      }
-                    }}
+                    onClick={() => handleDelete(service.id)}
                   >
                     <Trash2 className="w-4 h-4" />
                   </Button>
@@ -210,7 +226,6 @@ export const ServiceManager: React.FC<ServiceManagerProps> = ({
         ))}
       </div>
 
-      {/* Create/Edit Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
@@ -254,7 +269,6 @@ export const ServiceManager: React.FC<ServiceManagerProps> = ({
                   <option key={icon} value={icon}>{icon}</option>
                 ))}
               </select>
-              <p className="text-xs text-gray-500">Select an icon for the service card</p>
             </div>
 
             <div className="flex items-center space-x-2">
@@ -263,9 +277,7 @@ export const ServiceManager: React.FC<ServiceManagerProps> = ({
                 checked={formData.isActive}
                 onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
               />
-              <Label htmlFor="active">
-                Active (visible on website)
-              </Label>
+              <Label htmlFor="active">Active (visible on website)</Label>
             </div>
           </div>
 
