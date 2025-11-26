@@ -1,4 +1,4 @@
-//components
+// components/Navbar.tsx - SEO Enhanced
 'use client'
 
 import { useState, useEffect } from "react";
@@ -36,12 +36,15 @@ const Navbar = () => {
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         isScrolled ? "bg-background/95 backdrop-blur-sm shadow-md" : "bg-transparent"
       }`}
+      role="navigation"
+      aria-label="Main navigation"
     >
       <div className="container mx-auto px-6 py-4">
         <div className="flex items-center justify-between">
           <button 
             onClick={() => scrollToSection("hero")}
             className="text-2xl font-bold"
+            aria-label="Go to homepage"
           >
             <span className={isScrolled ? "text-foreground" : "text-primary-foreground"}>
               Copy<span className="text-primary">Express</span>
@@ -57,6 +60,7 @@ const Navbar = () => {
                 className={`transition-colors hover:text-primary ${
                   isScrolled ? "text-foreground" : "text-primary-foreground"
                 }`}
+                aria-label={`Navigate to ${link.label}`}
               >
                 {link.label}
               </button>
@@ -64,6 +68,7 @@ const Navbar = () => {
             <Button 
               onClick={() => scrollToSection("contact")}
               className="bg-primary hover:bg-primary-glow"
+              aria-label="Get a quote"
             >
               Get Quote
             </Button>
@@ -73,6 +78,8 @@ const Navbar = () => {
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             className={`md:hidden ${isScrolled ? "text-foreground" : "text-primary-foreground"}`}
+            aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
+            aria-expanded={isMobileMenuOpen}
           >
             {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
@@ -87,6 +94,7 @@ const Navbar = () => {
                   key={link.id}
                   onClick={() => scrollToSection(link.id)}
                   className="text-left py-2 text-foreground hover:text-primary-foreground transition-colors"
+                  aria-label={`Navigate to ${link.label}`}
                 >
                   {link.label}
                 </button>
@@ -94,6 +102,7 @@ const Navbar = () => {
               <Button 
                 onClick={() => scrollToSection("contact")}
                 className="bg-primary hover:bg-primary-glow w-full"
+                aria-label="Get a quote"
               >
                 Get Quote
               </Button>
