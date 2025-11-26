@@ -236,7 +236,7 @@ export const AboutManager: React.FC<AboutManagerProps> = ({
 
               {/* Features List */}
               <div className="space-y-2">
-                {about.features?.map((feature: any, index: number) => (
+                {about.features?.map((feature: any) => (
                   <div
                     key={feature.id}
                     draggable

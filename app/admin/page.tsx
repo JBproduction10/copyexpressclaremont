@@ -7,7 +7,7 @@ import React, { useState, useEffect } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import { redirect } from 'next/navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { BarChart3, Settings, Edit, Download, Briefcase, Mail } from 'lucide-react';
+import { BarChart3, Settings, Edit, Download, Briefcase, Mail, Image as ImageIcon, Phone } from 'lucide-react';
 import { Notification } from '@/components/admin/Notification';
 import { Header } from '@/components/admin/Header';
 import { DashboardStats } from '@/components/admin/DashboardStats';
@@ -93,7 +93,7 @@ const AdminCRUD: React.FC = () => {
   // Search handler
   const handleSearch = (query: string) => {
     setSearchQuery(query);
-    setCurrentPage(1); // Reset to first page on new search
+    setCurrentPage(1);
     fetchCategories(1, query);
   };
 
@@ -142,7 +142,6 @@ const AdminCRUD: React.FC = () => {
       const res = await fetch(`/api/categories/${id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Failed to delete category');
       
-      // If deleting last item on page and not first page, go to previous page
       if (categories.length === 1 && currentPage > 1) {
         setCurrentPage(currentPage - 1);
         await fetchCategories(currentPage - 1, searchQuery);
@@ -173,7 +172,6 @@ const AdminCRUD: React.FC = () => {
     showNotification('Subcategory added successfully');
   };
 
-  // Update subcategory function with proper state management
   const updateSubcategory = async (categoryId: string, subId: string, updates: any) => {
     const category = categories.find(c => c.id === categoryId);
     if (!category) return;
@@ -191,7 +189,6 @@ const AdminCRUD: React.FC = () => {
       
       if (!res.ok) throw new Error('Failed to update subcategory');
       
-      // Update local state immediately
       setCategories(prevCategories => 
         prevCategories.map(cat => 
           cat.id === categoryId 
@@ -204,7 +201,7 @@ const AdminCRUD: React.FC = () => {
     } catch (error) {
       console.error(error);
       showNotification('Failed to update subcategory', 'error');
-      throw error; // Re-throw to handle in child components
+      throw error;
     }
   };
 
@@ -219,7 +216,6 @@ const AdminCRUD: React.FC = () => {
 
   //=============HOOKS============
 
-  // Data editor hooks with the updated updateSubcategory
   const {
     selectedCategory,
     selectedSubcategory,
@@ -234,7 +230,6 @@ const AdminCRUD: React.FC = () => {
     localData,
   } = useDataEditor(categories, updateSubcategory, showNotification);
 
-  // Services management
   const { 
     services, 
     loading: servicesLoading, 
@@ -244,7 +239,6 @@ const AdminCRUD: React.FC = () => {
     reorderServices 
   } = useServices();
 
-  // About management
   const { 
     about, 
     loading: aboutLoading, 
@@ -256,7 +250,6 @@ const AdminCRUD: React.FC = () => {
     reorderFeatures 
   } = useAbout(session?.user?.id || null);
 
-  // Contact management
   const {
     contact,
     loading: contactLoading,
@@ -268,7 +261,6 @@ const AdminCRUD: React.FC = () => {
     reorderContactInfo,
   } = useContact(session?.user?.id || null);
 
-  // Hero management
   const {
     hero,
     loading: heroLoading,
@@ -276,7 +268,6 @@ const AdminCRUD: React.FC = () => {
     updateHero,
   } = useHero(session?.user?.id || null);
 
-  // SMTP Email management
   const {
     settings: emailSettings,
     loading: emailLoading,
@@ -285,7 +276,6 @@ const AdminCRUD: React.FC = () => {
     sendTestEmail,
   } = useEmailSettings();
 
-  // Authentication check
   if (status === 'loading' || loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -304,7 +294,6 @@ const AdminCRUD: React.FC = () => {
     showNotification('Logged out successfully');
   };
 
-  // Import/Export handlers
   const handleExport = async () => {
     try {
       const res = await fetch('/api/import-export/export');
@@ -347,14 +336,12 @@ const AdminCRUD: React.FC = () => {
     reader.readAsText(file);
   };
 
-  // Navigation helper
   const handleEditSubcategory = (categoryId: string, subId: string) => {
     setSelectedCategory(categoryId);
     setSelectedSubcategory(subId);
     setActiveTab('data');
   };
 
-  // Wrapper for service operations with notifications
   const wrapServiceHandler = (fn: () => Promise<void>, successMsg: string, errorMsg: string) => async () => {
     try {
       await fn();
@@ -369,50 +356,52 @@ const AdminCRUD: React.FC = () => {
       <Notification {...notification} />
       <Header username={session?.user?.username || 'User'} onLogout={handleLogout} />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          {/* Tab Navigation */}
-          <TabsList className="inline-flex w-auto min-w-full sm:grid sm:grid-cols-4 lg:grid-cols-8 h-auto gap-1">
-            <TabsTrigger value="dashboard" className="flex items-center justify-center gap-1.5 sm:gap-2 whitespace-nowrap px-2.5 sm:px-4 py-2.5 text-xs sm:text-sm">
-              <BarChart3 className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-              <span className="hidden xs:inline">Dashboard</span>
-            </TabsTrigger>
-            <TabsTrigger value="services" className="flex items-center justify-center gap-1.5 sm:gap-2 whitespace-nowrap px-2.5 sm:px-4 py-2.5 text-xs sm:text-sm">
-              <Briefcase className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-              <span className="hidden xs:inline">Services</span>
-            </TabsTrigger>
-            <TabsTrigger value="categories" className="flex items-center justify-center gap-1.5 sm:gap-2 whitespace-nowrap px-2.5 sm:px-4 py-2.5 text-xs sm:text-sm">
-              <Settings className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-              <span className="hidden xs:inline">Categories</span>
-            </TabsTrigger>
-            <TabsTrigger value="data" className="flex items-center justify-center gap-1.5 sm:gap-2 whitespace-nowrap px-2.5 sm:px-4 py-2.5 text-xs sm:text-sm">
-              <Edit className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-              <span className="hidden xs:inline">Data</span>
-            </TabsTrigger>
-            <TabsTrigger value="about" className="flex items-center justify-center gap-1.5 sm:gap-2 whitespace-nowrap px-2.5 sm:px-4 py-2.5 text-xs sm:text-sm">
-              <Settings className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-              <span className="hidden xs:inline">About</span>
-            </TabsTrigger>
-            <TabsTrigger value="contact" className="flex items-center justify-center gap-1.5 sm:gap-2 whitespace-nowrap px-2.5 sm:px-4 py-2.5 text-xs sm:text-sm">
-              <Settings className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-              <span className="hidden xs:inline">Contact</span>
-            </TabsTrigger>
-            <TabsTrigger value="hero" className="flex items-center justify-center gap-1.5 sm:gap-2 whitespace-nowrap px-2.5 sm:px-4 py-2.5 text-xs sm:text-sm">
-              <Settings className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-              <span className="hidden xs:inline">Hero</span>
-            </TabsTrigger>
-            <TabsTrigger value="email" className="flex items-center justify-center gap-1.5 sm:gap-2 whitespace-nowrap px-2.5 sm:px-4 py-2.5 text-xs sm:text-sm">
-              <Mail className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-              <span className="hidden xs:inline">Email</span>
-            </TabsTrigger>
-            <TabsTrigger value="import-export" className="flex items-center justify-center gap-1.5 sm:gap-2 whitespace-nowrap px-2.5 sm:px-4 py-2.5 text-xs sm:text-sm">
-              <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-              <span className="hidden xs:inline">Import</span>
-            </TabsTrigger>
-          </TabsList>
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-4 sm:py-8">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
+          {/* Tab Navigation - Horizontal Scrollable on Mobile */}
+          <div className="w-full overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0">
+            <TabsList className="inline-flex w-max min-w-full sm:w-full sm:grid sm:grid-cols-4 lg:grid-cols-9 h-auto gap-1">
+              <TabsTrigger value="dashboard" className="flex items-center justify-center gap-2 whitespace-nowrap px-4 py-2.5 text-sm">
+                <BarChart3 className="w-4 h-4 shrink-0" />
+                <span>Dashboard</span>
+              </TabsTrigger>
+              <TabsTrigger value="services" className="flex items-center justify-center gap-2 whitespace-nowrap px-4 py-2.5 text-sm">
+                <Briefcase className="w-4 h-4 shrink-0" />
+                <span>Services</span>
+              </TabsTrigger>
+              <TabsTrigger value="categories" className="flex items-center justify-center gap-2 whitespace-nowrap px-4 py-2.5 text-sm">
+                <Settings className="w-4 h-4 shrink-0" />
+                <span>Categories</span>
+              </TabsTrigger>
+              <TabsTrigger value="data" className="flex items-center justify-center gap-2 whitespace-nowrap px-4 py-2.5 text-sm">
+                <Edit className="w-4 h-4 shrink-0" />
+                <span>Data</span>
+              </TabsTrigger>
+              <TabsTrigger value="about" className="flex items-center justify-center gap-2 whitespace-nowrap px-4 py-2.5 text-sm">
+                <Settings className="w-4 h-4 shrink-0" />
+                <span>About</span>
+              </TabsTrigger>
+              <TabsTrigger value="contact" className="flex items-center justify-center gap-2 whitespace-nowrap px-4 py-2.5 text-sm">
+                <Phone className="w-4 h-4 shrink-0" />
+                <span>Contact</span>
+              </TabsTrigger>
+              <TabsTrigger value="hero" className="flex items-center justify-center gap-2 whitespace-nowrap px-4 py-2.5 text-sm">
+                <ImageIcon className="w-4 h-4 shrink-0" />
+                <span>Hero</span>
+              </TabsTrigger>
+              <TabsTrigger value="email" className="flex items-center justify-center gap-2 whitespace-nowrap px-4 py-2.5 text-sm">
+                <Mail className="w-4 h-4 shrink-0" />
+                <span>Email</span>
+              </TabsTrigger>
+              <TabsTrigger value="import-export" className="flex items-center justify-center gap-2 whitespace-nowrap px-4 py-2.5 text-sm">
+                <Download className="w-4 h-4 shrink-0" />
+                <span>Import</span>
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           {/* Tabs Content */}
-          <TabsContent value="dashboard" className="space-y-6">
+          <TabsContent value="dashboard" className="space-y-4 sm:space-y-6">
             <DashboardStats categories={categories} />
             <QuickActions 
               onAddCategory={addCategory} 
@@ -422,7 +411,7 @@ const AdminCRUD: React.FC = () => {
             />
           </TabsContent>
 
-          <TabsContent value="services" className="space-y-6">
+          <TabsContent value="services" className="space-y-4 sm:space-y-6">
             {servicesLoading ? (
               <div className="text-center py-12">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
@@ -455,17 +444,15 @@ const AdminCRUD: React.FC = () => {
             )}
           </TabsContent>
 
-          <TabsContent value="categories" className="space-y-6">
-            {/* Search Component */}
+          <TabsContent value="categories" className="space-y-4 sm:space-y-6">
             <CategorySearch 
               onSearch={handleSearch}
-              placeholder="Search categories by name or description..."
+              placeholder="Search categories..."
             />
 
-            {/* Results Summary */}
             {searchQuery && (
-              <div className="text-sm text-gray-600 bg-blue-50 border border-blue-200 rounded-lg p-3">
-                Showing {categories.length} of {totalCategories} categories matching &quot;{searchQuery}&quot;
+              <div className="text-xs sm:text-sm text-gray-600 bg-blue-50 border border-blue-200 rounded-lg p-2 sm:p-3">
+                Showing {categories.length} of {totalCategories} matching &quot;{searchQuery}&quot;
               </div>
             )}
 
@@ -480,38 +467,34 @@ const AdminCRUD: React.FC = () => {
               onDeleteSubcategory={deleteSubcategory}
             />
 
-            {/* Pagination */}
-            <div className="flex items-center justify-center gap-2 mt-6">
-              {/* Previous */}
+            {/* Pagination - Mobile Optimized */}
+            <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 mt-6">
               <button
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
-                className="px-3 py-1 border rounded disabled:opacity-40"
+                className="px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm border rounded disabled:opacity-40"
               >
                 Prev
               </button>
 
               {(() => {
                 const pages = [];
-                const maxShown = 5;
+                const maxShown = window.innerWidth < 640 ? 3 : 5;
 
-                let start = Math.max(1, currentPage - 2);
+                let start = Math.max(1, currentPage - Math.floor(maxShown / 2));
                 const end = Math.min(totalPages, start + maxShown - 1);
 
                 if (end - start < maxShown - 1) {
                   start = Math.max(1, end - maxShown + 1);
                 }
 
-                // First page always
                 if (start > 1) {
                   pages.push(1);
                   if (start > 2) pages.push('ellipsis-start');
                 }
 
-                // Sliding pages
                 for (let i = start; i <= end; i++) pages.push(i);
 
-                // Last page always
                 if (end < totalPages) {
                   if (end < totalPages - 1) pages.push('ellipsis-end');
                   pages.push(totalPages);
@@ -519,14 +502,14 @@ const AdminCRUD: React.FC = () => {
 
                 return pages.map((p, idx) =>
                   typeof p === 'string' ? (
-                    <span key={idx} className="px-2 text-gray-400 select-none">
+                    <span key={idx} className="px-1 sm:px-2 text-gray-400 select-none text-xs sm:text-sm">
                       ...
                     </span>
                   ) : (
                     <button
                       key={p}
                       onClick={() => setCurrentPage(p)}
-                      className={`px-3 py-1 border rounded ${
+                      className={`px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm border rounded ${
                         p === currentPage ? 'bg-primary text-white border-primary' : ''
                       }`}
                     >
@@ -536,18 +519,17 @@ const AdminCRUD: React.FC = () => {
                 );
               })()}
 
-              {/* Next */}
               <button
                 onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                 disabled={currentPage === totalPages}
-                className="px-3 py-1 border rounded disabled:opacity-40"
+                className="px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm border rounded disabled:opacity-40"
               >
                 Next
               </button>
             </div>
           </TabsContent>
 
-          <TabsContent value="data" className="space-y-6">
+          <TabsContent value="data" className="space-y-4 sm:space-y-6">
             <DataEditor
               categories={categories}
               selectedCategory={selectedCategory}
@@ -568,7 +550,7 @@ const AdminCRUD: React.FC = () => {
             />
           </TabsContent>
 
-          <TabsContent value="about" className="space-y-6">
+          <TabsContent value="about" className="space-y-4 sm:space-y-6">
             {aboutLoading ? (
               <div className="text-center py-12">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
@@ -608,7 +590,7 @@ const AdminCRUD: React.FC = () => {
             )}
           </TabsContent>
 
-          <TabsContent value="contact" className="space-y-6">
+          <TabsContent value="contact" className="space-y-4 sm:space-y-6">
             {contactLoading ? (
               <div className="text-center py-12">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
@@ -648,7 +630,7 @@ const AdminCRUD: React.FC = () => {
             )}
           </TabsContent>
           
-          <TabsContent value="hero" className="space-y-6">
+          <TabsContent value="hero" className="space-y-4 sm:space-y-6">
             {heroLoading ? (
               <div className="text-center py-12">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
@@ -672,7 +654,7 @@ const AdminCRUD: React.FC = () => {
             )}
           </TabsContent>
 
-          <TabsContent value="email" className="space-y-6">
+          <TabsContent value="email" className="space-y-4 sm:space-y-6">
             {emailLoading ? (
               <div className="text-center py-12">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
@@ -708,7 +690,7 @@ const AdminCRUD: React.FC = () => {
             )}
           </TabsContent>
 
-          <TabsContent value="import-export" className="space-y-6">
+          <TabsContent value="import-export" className="space-y-4 sm:space-y-6">
             <ImportExport onExport={handleExport} onImport={handleImport} />
           </TabsContent>
         </Tabs>
