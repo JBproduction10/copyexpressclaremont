@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 // lib/auth-middleware.ts
 import { getServerSession } from "next-auth";
 import { authOptions } from "./auth.config";

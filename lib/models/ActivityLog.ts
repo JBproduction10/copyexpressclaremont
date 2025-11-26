@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 //lib/models
-import mongoose, { Schema, Document, Model } from 'mongoose';
+import mongoose, { Schema, Document} from 'mongoose';
 
 export interface IActivityLog extends Document {
   userId: mongoose.Types.ObjectId;
