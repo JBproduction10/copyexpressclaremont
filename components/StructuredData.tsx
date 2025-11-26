@@ -9,7 +9,7 @@ export function StructuredData() {
     "image": "https://copyexpressclaremont.com/logo.png",
     "@id": "https://copyexpressclaremont.com",
     "url": "https://copyexpressclaremont.com",
-    "telephone": "+27211403228", // Add your actual phone number
+    "telephone": "+27211403228",
     "priceRange": "R",
     "address": {
       "@type": "PostalAddress",

@@ -89,6 +89,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="geo.placename" content="Claremont, Cape Town" />
         <meta name="geo.position" content="-33.9833;18.4647" />
         <meta name="ICBM" content="-33.9833, 18.4647" />
+
+        {/* 🔥 logo / favicon icons here */}
+        <link rel="icon" href="/favicon.io" sizes="any" />
+        <link rel="icon" type="image/png" href="/favicon-96x96" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <link rel="manifest" href="/manifest" />
       </head>
       <body 
         className={`${interFont.variable} font-sans antialiased`}
