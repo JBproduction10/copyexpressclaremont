@@ -66,7 +66,7 @@ export async function POST(request: Request) {
       username,
       email,
       password,
-      role: "admin",
+      role: "viewer",
       isActive: false, // Inactive until email verified
       isEmailVerified: false,
       emailVerificationToken: hashedToken,
