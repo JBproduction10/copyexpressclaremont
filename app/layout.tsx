@@ -13,7 +13,7 @@ const interFont = Inter({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://copyexpressclaremont.com'), // Replace with your actual domain
+  metadataBase: new URL('https://copyexpressclaremont.com'),
   title: {
     default: "CopyExpress Claremont | Professional Printing Services in Cape Town",
     template: "%s | CopyExpress Claremont"
@@ -48,7 +48,7 @@ export const metadata: Metadata = {
     description: "Your one-stop print shop for everything from lamination to custom apparel in Claremont, Cape Town.",
     images: [
       {
-        url: "/og-image.jpg", // Add this image to your public folder
+        url: "/og-image.jpg",
         width: 1200,
         height: 630,
         alt: "CopyExpress Claremont Printing Services",
@@ -94,7 +94,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="icon" href="/favicon.io" sizes="any" />
         <link rel="icon" type="image/png" href="/favicon-96x96" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-        <link rel="manifest" href="/manifest" />
+        <link rel="manifest" href="/manifest.json" />
       </head>
       <body 
         className={`${interFont.variable} font-sans antialiased`}
