@@ -1,13 +1,13 @@
 // app/admin/verify-email/page.tsx
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CheckCircle, XCircle, Loader2 } from 'lucide-react';
 
-export default function VerifyEmailPage() {
+function VerifyEmailContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
@@ -15,7 +15,7 @@ export default function VerifyEmailPage() {
 
   useEffect(() => {
     const token = searchParams.get('token');
-    
+
     if (!token) {
       setStatus('error');
       setMessage('Invalid verification link');
@@ -66,7 +66,7 @@ export default function VerifyEmailPage() {
             {status === 'loading' && (
               <Loader2 className="w-16 h-16 text-blue-500 animate-spin" />
             )}
-            
+
             {status === 'success' && (
               <>
                 <CheckCircle className="w-16 h-16 text-green-500" />
@@ -79,7 +79,7 @@ export default function VerifyEmailPage() {
                 </Button>
               </>
             )}
-            
+
             {status === 'error' && (
               <>
                 <XCircle className="w-16 h-16 text-red-500" />
@@ -105,5 +105,22 @@ export default function VerifyEmailPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function VerifyEmailPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-linear-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md">
+          <CardContent className="flex flex-col items-center space-y-4">
+            <Loader2 className="w-16 h-16 text-blue-500 animate-spin" />
+            <p className="text-center text-gray-600">Loading...</p>
+          </CardContent>
+        </Card>
+      </div>
+    }>
+      <VerifyEmailContent />
+    </Suspense>
   );
 }
