@@ -1,9 +1,11 @@
+// components/Hero.tsx - Fixed version
 'use client';
 
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 interface HeroData {
   title: string;
@@ -21,18 +23,25 @@ const Hero = () => {
   const [heroData, setHeroData] = useState<HeroData | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchHeroData();
-  }, []);
-
   const fetchHeroData = async () => {
     try {
-      const response = await fetch('/api/hero?active=true');
+      setLoading(true);
+      const response = await fetch('/api/hero?active=true', {
+        cache: 'no-store', // CRITICAL: Prevent caching
+        headers: {
+          'Cache-Control': 'no-cache',
+        }
+      });
+      
       if (!response.ok) throw new Error('Failed to fetch hero data');
+      
       const data = await response.json();
+      console.log('[Hero] Fetched data:', data.hero);
       setHeroData(data.hero);
     } catch (error) {
       console.error('Error fetching hero data:', error);
+      toast.error('Failed to load hero section');
+      
       // Fallback to default values if fetch fails
       setHeroData({
         title: 'CopyExpress',
@@ -49,6 +58,22 @@ const Hero = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchHeroData();
+
+    // Listen for updates from admin panel
+    const handleUpdate = () => {
+      console.log('[Hero] Received update event, refetching...');
+      fetchHeroData();
+    };
+
+    window.addEventListener('heroUpdated', handleUpdate);
+    
+    return () => {
+      window.removeEventListener('heroUpdated', handleUpdate);
+    };
+  }, []);
 
   const scrollToSection = (id: string) => {
     const element = document.getElementById(id);

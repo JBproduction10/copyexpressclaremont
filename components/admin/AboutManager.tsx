@@ -1,5 +1,6 @@
-//components/admin
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
+// components/admin/AboutManager.tsx - Simplified with direct updates
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -42,6 +43,7 @@ export const AboutManager: React.FC<AboutManagerProps> = ({
   const [editingFeatureId, setEditingFeatureId] = useState<string | null>(null);
   const [editingFeatureText, setEditingFeatureText] = useState('');
   const [draggedItem, setDraggedItem] = useState<any>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   React.useEffect(() => {
     if (about) {
@@ -58,22 +60,96 @@ export const AboutManager: React.FC<AboutManagerProps> = ({
     }
   }, [about]);
 
+  // Direct API call with event emission
+  const updateAboutDirect = async (updates: any) => {
+    setIsSaving(true);
+    try {
+      console.log('[AboutManager] Updating about:', updates);
+      
+      const response = await fetch('/api/about', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates)
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update about');
+      }
+
+      const data = await response.json();
+      console.log('[AboutManager] Update successful:', data);
+
+      // CRITICAL: Emit event immediately after successful update
+      window.dispatchEvent(new Event('aboutUpdated'));
+      console.log('[AboutManager] Event emitted: aboutUpdated');
+
+      // Small delay to let the event propagate
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+    } catch (error) {
+      console.error('[AboutManager] Update failed:', error);
+      throw error;
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const handleSaveMain = async () => {
-    await onUpdate(editForm);
-    setIsEditing(false);
+    try {
+      await updateAboutDirect(editForm);
+      setIsEditing(false);
+    } catch (error) {
+      console.error('Error saving about:', error);
+      alert('Failed to save changes');
+    }
   };
 
   const handleAddFeature = async () => {
     if (!newFeature.trim()) return;
-    await onAddFeature({ text: newFeature });
-    setNewFeature('');
+    
+    try {
+      const newFeatureObj = {
+        id: `f-${Date.now()}`,
+        text: newFeature,
+        order: about.features?.length || 0
+      };
+
+      const updatedFeatures = [...(about.features || []), newFeatureObj];
+      await updateAboutDirect({ features: updatedFeatures });
+      setNewFeature('');
+    } catch (error) {
+      console.error('Error adding feature:', error);
+      alert('Failed to add feature');
+    }
   };
 
   const handleSaveFeature = async (featureId: string) => {
     if (!editingFeatureText.trim()) return;
-    await onUpdateFeature(featureId, editingFeatureText);
-    setEditingFeatureId(null);
-    setEditingFeatureText('');
+    
+    try {
+      const updatedFeatures = about.features.map((f: any) =>
+        f.id === featureId ? { ...f, text: editingFeatureText } : f
+      );
+      
+      await updateAboutDirect({ features: updatedFeatures });
+      setEditingFeatureId(null);
+      setEditingFeatureText('');
+    } catch (error) {
+      console.error('Error updating feature:', error);
+      alert('Failed to update feature');
+    }
+  };
+
+  const handleDeleteFeature = async (featureId: string) => {
+    if (!window.confirm('Delete this feature?')) return;
+    
+    try {
+      const updatedFeatures = about.features.filter((f: any) => f.id !== featureId);
+      await updateAboutDirect({ features: updatedFeatures });
+    } catch (error) {
+      console.error('Error deleting feature:', error);
+      alert('Failed to delete feature');
+    }
   };
 
   const handleDragStart = (e: React.DragEvent, feature: any) => {
@@ -98,9 +174,25 @@ export const AboutManager: React.FC<AboutManagerProps> = ({
     features.splice(oldIndex, 1);
     features.splice(newIndex, 0, draggedItem);
 
-    const featureIds = features.map(f => f.id);
-    await onReorderFeatures(featureIds);
-    setDraggedItem(null);
+    const reorderedFeatures = features.map((f, index) => ({ ...f, order: index }));
+    
+    try {
+      await updateAboutDirect({ features: reorderedFeatures });
+      setDraggedItem(null);
+    } catch (error) {
+      console.error('Error reordering features:', error);
+      alert('Failed to reorder features');
+    }
+  };
+
+  const handleToggleActive = async (checked: boolean) => {
+    try {
+      await updateAboutDirect({ isActive: checked });
+      setEditForm({ ...editForm, isActive: checked });
+    } catch (error) {
+      console.error('Error toggling active:', error);
+      alert('Failed to toggle active state');
+    }
   };
 
   if (!about) return <div>Loading...</div>;
@@ -115,14 +207,19 @@ export const AboutManager: React.FC<AboutManagerProps> = ({
         <div className="flex items-center gap-2">
           <Switch
             checked={editForm.isActive}
-            onCheckedChange={(checked) => {
-              setEditForm({ ...editForm, isActive: checked });
-              onUpdate({ isActive: checked });
-            }}
+            onCheckedChange={handleToggleActive}
+            disabled={isSaving}
           />
           <Label>Active on Website</Label>
         </div>
       </div>
+
+      {isSaving && (
+        <div className="fixed bottom-4 right-4 bg-white shadow-lg rounded-lg p-3 flex items-center gap-2 z-50 animate-fade-in">
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+          <span className="text-sm text-gray-600">Saving changes...</span>
+        </div>
+      )}
 
       <Tabs defaultValue="content" className="w-full">
         <TabsList className="grid w-full grid-cols-3">
@@ -141,17 +238,17 @@ export const AboutManager: React.FC<AboutManagerProps> = ({
                   <CardDescription>Edit the main about section content</CardDescription>
                 </div>
                 {!isEditing ? (
-                  <Button onClick={() => setIsEditing(true)}>
+                  <Button onClick={() => setIsEditing(true)} disabled={isSaving}>
                     <Edit className="w-4 h-4 mr-2" />
                     Edit
                   </Button>
                 ) : (
                   <div className="flex gap-2">
-                    <Button onClick={handleSaveMain}>
+                    <Button onClick={handleSaveMain} disabled={isSaving}>
                       <Save className="w-4 h-4 mr-2" />
-                      Save
+                      {isSaving ? 'Saving...' : 'Save'}
                     </Button>
-                    <Button variant="outline" onClick={() => setIsEditing(false)}>
+                    <Button variant="outline" onClick={() => setIsEditing(false)} disabled={isSaving}>
                       <X className="w-4 h-4 mr-2" />
                       Cancel
                     </Button>
@@ -168,6 +265,7 @@ export const AboutManager: React.FC<AboutManagerProps> = ({
                       value={editForm.title}
                       onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
                       placeholder="Why Choose"
+                      disabled={isSaving}
                     />
                   </div>
                   <div className="space-y-2">
@@ -176,14 +274,16 @@ export const AboutManager: React.FC<AboutManagerProps> = ({
                       value={editForm.subtitle}
                       onChange={(e) => setEditForm({ ...editForm, subtitle: e.target.value })}
                       placeholder="CopyExpress Claremont?"
+                      disabled={isSaving}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Highlighted Text (for subtitle)</Label>
+                    <Label>Highlighted Text</Label>
                     <Input
                       value={editForm.highlightedText}
                       onChange={(e) => setEditForm({ ...editForm, highlightedText: e.target.value })}
                       placeholder="CopyExpress Claremont"
+                      disabled={isSaving}
                     />
                   </div>
                   <div className="space-y-2">
@@ -193,20 +293,19 @@ export const AboutManager: React.FC<AboutManagerProps> = ({
                       onChange={(e) => setEditForm({ ...editForm, mainDescription: e.target.value })}
                       placeholder="Your main description..."
                       rows={4}
+                      disabled={isSaving}
                     />
                   </div>
                 </>
               ) : (
-                <>
-                  <div className="space-y-4">
-                    <div>
-                      <h3 className="text-lg font-semibold mb-2">
-                        {about.title} <span className="text-primary">{about.highlightedText}</span>
-                      </h3>
-                      <p className="text-gray-600">{about.mainDescription}</p>
-                    </div>
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="text-lg font-semibold mb-2">
+                      {about.title} <span className="text-primary">{about.highlightedText}</span>
+                    </h3>
+                    <p className="text-gray-600">{about.mainDescription}</p>
                   </div>
-                </>
+                </div>
               )}
             </CardContent>
           </Card>
@@ -220,26 +319,25 @@ export const AboutManager: React.FC<AboutManagerProps> = ({
               <CardDescription>Drag to reorder • Total: {about.features?.length || 0} features</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* Add New Feature */}
               <div className="flex gap-2">
                 <Input
                   placeholder="Add new feature..."
                   value={newFeature}
                   onChange={(e) => setNewFeature(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && handleAddFeature()}
+                  disabled={isSaving}
                 />
-                <Button onClick={handleAddFeature} disabled={!newFeature.trim()}>
+                <Button onClick={handleAddFeature} disabled={!newFeature.trim() || isSaving}>
                   <Plus className="w-4 h-4 mr-2" />
                   Add
                 </Button>
               </div>
 
-              {/* Features List */}
               <div className="space-y-2">
                 {about.features?.map((feature: any) => (
                   <div
                     key={feature.id}
-                    draggable
+                    draggable={!isSaving}
                     onDragStart={(e) => handleDragStart(e, feature)}
                     onDragOver={handleDragOver}
                     onDrop={(e) => handleDrop(e, feature)}
@@ -255,8 +353,9 @@ export const AboutManager: React.FC<AboutManagerProps> = ({
                           onChange={(e) => setEditingFeatureText(e.target.value)}
                           className="flex-1"
                           autoFocus
+                          disabled={isSaving}
                         />
-                        <Button size="sm" onClick={() => handleSaveFeature(feature.id)}>
+                        <Button size="sm" onClick={() => handleSaveFeature(feature.id)} disabled={isSaving}>
                           <Save className="w-3 h-3" />
                         </Button>
                         <Button
@@ -266,6 +365,7 @@ export const AboutManager: React.FC<AboutManagerProps> = ({
                             setEditingFeatureId(null);
                             setEditingFeatureText('');
                           }}
+                          disabled={isSaving}
                         >
                           <X className="w-3 h-3" />
                         </Button>
@@ -281,17 +381,15 @@ export const AboutManager: React.FC<AboutManagerProps> = ({
                               setEditingFeatureId(feature.id);
                               setEditingFeatureText(feature.text);
                             }}
+                            disabled={isSaving}
                           >
                             <Edit className="w-3 h-3" />
                           </Button>
                           <Button
                             size="sm"
                             variant="ghost"
-                            onClick={() => {
-                              if (window.confirm('Delete this feature?')) {
-                                onDeleteFeature(feature.id);
-                              }
-                            }}
+                            onClick={() => handleDeleteFeature(feature.id)}
+                            disabled={isSaving}
                           >
                             <Trash2 className="w-3 h-3 text-red-500" />
                           </Button>
@@ -320,6 +418,7 @@ export const AboutManager: React.FC<AboutManagerProps> = ({
                     value={editForm.statisticNumber}
                     onChange={(e) => setEditForm({ ...editForm, statisticNumber: e.target.value })}
                     placeholder="35+"
+                    disabled={isSaving}
                   />
                 </div>
                 <div className="space-y-2">
@@ -328,6 +427,7 @@ export const AboutManager: React.FC<AboutManagerProps> = ({
                     value={editForm.statisticLabel}
                     onChange={(e) => setEditForm({ ...editForm, statisticLabel: e.target.value })}
                     placeholder="Years"
+                    disabled={isSaving}
                   />
                 </div>
                 <div className="space-y-2">
@@ -336,20 +436,20 @@ export const AboutManager: React.FC<AboutManagerProps> = ({
                     value={editForm.statisticSubtext}
                     onChange={(e) => setEditForm({ ...editForm, statisticSubtext: e.target.value })}
                     placeholder="Of Excellence"
+                    disabled={isSaving}
                   />
                 </div>
               </div>
 
-              {/* Preview */}
               <div className="mt-6 p-6 bg-linear-to-br from-primary to-accent rounded-2xl text-center text-white">
                 <div className="text-6xl font-bold mb-4">{editForm.statisticNumber}</div>
                 <div className="text-2xl mb-2">{editForm.statisticLabel}</div>
                 <div className="text-lg opacity-90">{editForm.statisticSubtext}</div>
               </div>
 
-              <Button onClick={() => onUpdate(editForm)} className="w-full">
+              <Button onClick={() => updateAboutDirect(editForm)} className="w-full" disabled={isSaving}>
                 <Save className="w-4 h-4 mr-2" />
-                Save Statistics
+                {isSaving ? 'Saving...' : 'Save Statistics'}
               </Button>
             </CardContent>
           </Card>

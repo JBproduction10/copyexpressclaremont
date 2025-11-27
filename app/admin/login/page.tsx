@@ -30,7 +30,12 @@ export default function LoginPage() {
       });
 
       if (result?.error) {
-        toast.error(result.error);
+        // Check if error is about email verification
+        if (result.error.includes('verify') || result.error.includes('verification')) {
+          toast.error('Please verify your email before logging in. Check your inbox for the verification link.');
+        } else {
+          toast.error(result.error);
+        }
       } else if (result?.ok) {
         toast.success('Login successful!');
         router.push('/admin');
@@ -67,7 +72,15 @@ export default function LoginPage() {
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">Password</label>
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium">Password</label>
+                <Link
+                  href="/admin/forgot-password"
+                  className="text-xs text-blue-600 hover:underline"
+                >
+                  Forgot password?
+                </Link>
+              </div>
               <div className="relative">
                 <Input
                   type={showPassword ? 'text' : 'password'}
@@ -97,7 +110,7 @@ export default function LoginPage() {
           </form>
           <div className="mt-4 text-center">
             <p className="text-sm text-gray-600">
-              Don&apos;t have an account?{" "}
+              Don&apos;t have an account?{' '}
               <Link
                 href="/admin/register"
                 className="text-blue-600 hover:underline font-medium"

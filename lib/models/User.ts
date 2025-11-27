@@ -1,7 +1,8 @@
-//lib/models
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import mongoose, { Schema, Document, Model } from 'mongoose';
+// lib/models/User.ts
+import mongoose, { Schema, Document} from 'mongoose';
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 
 export interface IUser extends Document {
   username: string;
@@ -9,10 +10,17 @@ export interface IUser extends Document {
   password: string;
   role: 'admin' | 'editor' | 'viewer';
   isActive: boolean;
+  isEmailVerified: boolean;
+  emailVerificationToken?: string;
+  emailVerificationExpires?: Date;
+  resetPasswordToken?: string;
+  resetPasswordExpires?: Date;
   lastLogin?: Date;
   createdAt: Date;
   updatedAt: Date;
   comparePassword(candidatePassword: string): Promise<boolean>;
+  generateEmailVerificationToken(): string;
+  generatePasswordResetToken(): string;
 }
 
 const UserSchema = new Schema<IUser>({
@@ -44,6 +52,14 @@ const UserSchema = new Schema<IUser>({
     type: Boolean,
     default: true
   },
+  isEmailVerified: {
+    type: Boolean,
+    default: false
+  },
+  emailVerificationToken: String,
+  emailVerificationExpires: Date,
+  resetPasswordToken: String,
+  resetPasswordExpires: Date,
   lastLogin: Date
 }, {
   timestamps: true
@@ -67,7 +83,33 @@ UserSchema.methods.comparePassword = async function(candidatePassword: string): 
   return bcrypt.compare(candidatePassword, this.password);
 };
 
-const User: Model<IUser> = 
-  mongoose.models.User || mongoose.model<IUser>('User', UserSchema);
+// Generate email verification token
+UserSchema.methods.generateEmailVerificationToken = function(): string {
+  const token = crypto.randomBytes(32).toString('hex');
+  this.emailVerificationToken = crypto
+    .createHash('sha256')
+    .update(token)
+    .digest('hex');
+  this.emailVerificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+  return token;
+};
+
+// Generate password reset token
+UserSchema.methods.generatePasswordResetToken = function(): string {
+  const token = crypto.randomBytes(32).toString('hex');
+  this.resetPasswordToken = crypto
+    .createHash('sha256')
+    .update(token)
+    .digest('hex');
+  this.resetPasswordExpires = new Date(Date.now() + 1 * 60 * 60 * 1000); // 1 hour
+  return token;
+};
+
+// Clear existing model to avoid OverwriteModelError
+if (mongoose.models.User) {
+  delete mongoose.models.User;
+}
+
+const User = mongoose.model<IUser>('User', UserSchema);
 
 export default User;

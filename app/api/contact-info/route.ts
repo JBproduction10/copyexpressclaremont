@@ -1,9 +1,13 @@
+// app/api/contact-info/route.ts - Fixed with cache revalidation
 import { NextRequest, NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import connectDB from '@/lib/mongodb';
 import Contact, { IContact } from '@/lib/models/Contact';
 import ActivityLog from '@/lib/models/ActivityLog';
 import { requireAuth } from '@/lib/auth-middleware';
 import { Types, FlattenMaps } from 'mongoose';
+
+export const dynamic = 'force-dynamic'; // CRITICAL: Disable caching
 
 export async function GET(request: NextRequest) {
   try {
@@ -69,10 +73,16 @@ export async function GET(request: NextRequest) {
       })).toObject() as FlattenMaps<IContact> & Required<{ _id: Types.ObjectId }> & { __v: number };
     }
 
-    return NextResponse.json({
-      success: true,
-      contact
-    });
+    return NextResponse.json(
+      { success: true, contact },
+      {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0',
+        }
+      }
+    );
   } catch (error) {
     console.error('Error fetching contact:', error);
     return NextResponse.json(
@@ -89,6 +99,8 @@ export async function PUT(request: NextRequest) {
 
     await connectDB();
     const body = await request.json();
+    
+    console.log('[API] Updating contact with:', body);
     
     let contact = await Contact.findOne().sort({ createdAt: -1 }).lean() as (FlattenMaps<IContact> & Required<{ _id: Types.ObjectId }> & { __v: number }) | null;
     
@@ -113,10 +125,22 @@ export async function PUT(request: NextRequest) {
       details: { updates: Object.keys(body) }
     });
 
-    return NextResponse.json({
-      success: true,
-      contact
-    });
+    // CRITICAL: Revalidate Next.js cache
+    revalidatePath('/');
+    revalidatePath('/api/contact-info');
+
+    console.log('[API] Contact updated successfully');
+
+    return NextResponse.json(
+      { success: true, contact },
+      {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0',
+        }
+      }
+    );
   } catch (error) {
     console.error('Error updating contact:', error);
     return NextResponse.json(

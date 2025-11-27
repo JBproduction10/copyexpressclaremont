@@ -1,9 +1,13 @@
+// app/api/hero/route.ts - Fixed with cache revalidation
 import { NextRequest, NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import connectDB from '@/lib/mongodb';
 import Hero, { IHero } from '@/lib/models/Hero';
 import ActivityLog from '@/lib/models/ActivityLog';
 import { requireAuth } from '@/lib/auth-middleware';
 import { Types, FlattenMaps } from 'mongoose';
+
+export const dynamic = 'force-dynamic'; // CRITICAL: Disable caching
 
 export async function GET(request: NextRequest) {
   try {
@@ -30,10 +34,16 @@ export async function GET(request: NextRequest) {
       })).toObject() as FlattenMaps<IHero> & Required<{ _id: Types.ObjectId }> & { __v: number };
     }
 
-    return NextResponse.json({
-      success: true,
-      hero
-    });
+    return NextResponse.json(
+      { success: true, hero },
+      {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0',
+        }
+      }
+    );
   } catch (error) {
     console.error('Error fetching hero:', error);
     return NextResponse.json(
@@ -50,6 +60,8 @@ export async function PUT(request: NextRequest) {
 
     await connectDB();
     const body = await request.json();
+    
+    console.log('[API] Updating hero with:', body);
     
     let hero = await Hero.findOne().sort({ createdAt: -1 }).lean() as (FlattenMaps<IHero> & Required<{ _id: Types.ObjectId }> & { __v: number }) | null;
     
@@ -74,10 +86,22 @@ export async function PUT(request: NextRequest) {
       details: { updates: Object.keys(body) }
     });
 
-    return NextResponse.json({
-      success: true,
-      hero
-    });
+    // CRITICAL: Revalidate Next.js cache
+    revalidatePath('/');
+    revalidatePath('/api/hero');
+
+    console.log('[API] Hero updated successfully');
+
+    return NextResponse.json(
+      { success: true, hero },
+      {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0',
+        }
+      }
+    );
   } catch (error) {
     console.error('Error updating hero:', error);
     return NextResponse.json(

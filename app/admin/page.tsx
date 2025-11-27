@@ -561,31 +561,57 @@ const AdminCRUD: React.FC = () => {
             ) : (
               <AboutManager
                 about={about}
-                onUpdate={wrapServiceHandler(
-                  () => updateAbout({}), 
-                  'About updated', 
-                  'Failed to update About'
-                )}
-                onAddFeature={wrapServiceHandler(
-                  () => addFeature({ text: '' }), 
-                  'Feature added', 
-                  'Failed to add feature'
-                )}
-                onUpdateFeature={(id, text) => wrapServiceHandler(
-                  () => updateFeature(id, text), 
-                  'Feature updated', 
-                  'Failed to update feature'
-                )()}
-                onDeleteFeature={id => wrapServiceHandler(
-                  () => deleteFeature(id), 
-                  'Feature deleted', 
-                  'Failed to delete feature'
-                )()}
-                onReorderFeatures={ids => wrapServiceHandler(
-                  () => reorderFeatures(ids), 
-                  'Features reordered', 
-                  'Failed to reorder features'
-                )()}
+                onUpdate={async (updates) => {
+                  try {
+                    await updateAbout(updates);
+                    showNotification('About updated successfully');
+                    // CRITICAL: Emit event after successful update
+                    window.dispatchEvent(new Event('aboutUpdated'));
+                  } catch (error) {
+                    console.error('Error updating about:', error);
+                    showNotification('Failed to update About', 'error');
+                  }
+                }}
+                onAddFeature={async (feature) => {
+                  try {
+                    await addFeature(feature);
+                    showNotification('Feature added successfully');
+                    window.dispatchEvent(new Event('aboutUpdated'));
+                  } catch (error) {
+                    console.error('Error adding feature:', error);
+                    showNotification('Failed to add feature', 'error');
+                  }
+                }}
+                onUpdateFeature={async (id, text) => {
+                  try {
+                    await updateFeature(id, text);
+                    showNotification('Feature updated successfully');
+                    window.dispatchEvent(new Event('aboutUpdated'));
+                  } catch (error) {
+                    console.error('Error updating feature:', error);
+                    showNotification('Failed to update feature', 'error');
+                  }
+                }}
+                onDeleteFeature={async (id) => {
+                  try {
+                    await deleteFeature(id);
+                    showNotification('Feature deleted successfully');
+                    window.dispatchEvent(new Event('aboutUpdated'));
+                  } catch (error) {
+                    console.error('Error deleting feature:', error);
+                    showNotification('Failed to delete feature', 'error');
+                  }
+                }}
+                onReorderFeatures={async (ids) => {
+                  try {
+                    await reorderFeatures(ids);
+                    showNotification('Features reordered successfully');
+                    window.dispatchEvent(new Event('aboutUpdated'));
+                  } catch (error) {
+                    console.error('Error reordering features:', error);
+                    showNotification('Failed to reorder features', 'error');
+                  }
+                }}
               />
             )}
           </TabsContent>

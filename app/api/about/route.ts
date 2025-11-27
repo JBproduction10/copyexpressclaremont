@@ -1,9 +1,13 @@
+// app/api/about/route.ts - Fixed with cache revalidation
 import { NextRequest, NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import connectDB from '@/lib/mongodb';
 import About, { IAbout } from '@/lib/models/About';
 import ActivityLog from '@/lib/models/ActivityLog';
 import { requireAuth } from "@/lib/auth-middleware";
 import { Types, FlattenMaps } from 'mongoose';
+
+export const dynamic = 'force-dynamic'; // CRITICAL: Disable caching
 
 export async function GET(request: NextRequest) {
   try {
@@ -37,10 +41,16 @@ export async function GET(request: NextRequest) {
       })).toObject() as FlattenMaps<IAbout> & Required<{ _id: Types.ObjectId }> & { __v: number };
     }
 
-    return NextResponse.json({
-      success: true,
-      about
-    });
+    return NextResponse.json(
+      { success: true, about },
+      { 
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0',
+        }
+      }
+    );
   } catch (error) {
     console.error('Error fetching about:', error);
     return NextResponse.json(
@@ -58,6 +68,8 @@ export async function PUT(request: NextRequest) {
     await connectDB();
     const body = await request.json();
     
+    console.log('[API] Updating about with:', body);
+    
     let about = await About.findOne().sort({ createdAt: -1 }).lean() as (FlattenMaps<IAbout> & Required<{ _id: Types.ObjectId }> & { __v: number }) | null;
     
     if (!about) {
@@ -74,17 +86,29 @@ export async function PUT(request: NextRequest) {
     await ActivityLog.create({
       userId: session.user.id,
       username: session.user.username,
-      email: session.user.email, // FIXED: Added email
+      email: session.user.email,
       action: 'update',
       targetType: 'about',
       targetId: about._id.toString(),
       details: { updates: Object.keys(body) }
     });
 
-    return NextResponse.json({
-      success: true,
-      about
-    });
+    // CRITICAL: Revalidate Next.js cache
+    revalidatePath('/');
+    revalidatePath('/api/about');
+
+    console.log('[API] About updated successfully');
+
+    return NextResponse.json(
+      { success: true, about },
+      {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0',
+        }
+      }
+    );
   } catch (error) {
     console.error('Error updating about:', error);
     return NextResponse.json(

@@ -1,5 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+// components/Contact.tsx - Fixed version
 'use client';
+
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from './ui/textarea';
@@ -37,25 +39,43 @@ const Contact = () => {
   });
 
   // Fetch contact data from API
+  const fetchContactData = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('/api/contact-info?active=true', {
+        cache: 'no-store', // CRITICAL: Prevent caching
+        headers: {
+          'Cache-Control': 'no-cache',
+        }
+      });
+      
+      if (!response.ok) throw new Error('Failed to fetch contact data');
+      
+      const data = await response.json();
+      console.log('[Contact] Fetched data:', data.contact);
+      setContactData(data.contact);
+    } catch (error) {
+      console.error('Error fetching contact data:', error);
+      toast.error('Failed to load contact information');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchContactData = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch('/api/contact-info?active=true');
-        
-        if (!response.ok) throw new Error('Failed to fetch contact data');
-        
-        const data = await response.json();
-        setContactData(data.contact);
-      } catch (error) {
-        console.error('Error fetching contact data:', error);
-        toast.error('Failed to load contact information');
-      } finally {
-        setLoading(false);
-      }
+    fetchContactData();
+
+    // Listen for updates from admin panel
+    const handleUpdate = () => {
+      console.log('[Contact] Received update event, refetching...');
+      fetchContactData();
     };
 
-    fetchContactData();
+    window.addEventListener('contactUpdated', handleUpdate);
+    
+    return () => {
+      window.removeEventListener('contactUpdated', handleUpdate);
+    };
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -88,7 +108,7 @@ const Contact = () => {
 
   if (loading) {
     return (
-      <section id="contact" className="py-20 bg-background">
+      <section id="contact" className="py-20 bg-background" aria-label="Contact section loading">
         <div className="container mx-auto px-6">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
@@ -105,10 +125,14 @@ const Contact = () => {
   const sortedContactInfo = [...(contactData.contactInfo || [])].sort((a, b) => a.order - b.order);
 
   return (
-    <section id="contact" className="py-20 bg-background">
+    <section 
+      id="contact" 
+      className="py-20 bg-background"
+      aria-labelledby="contact-heading"
+    >
       <div className="container mx-auto px-6">
         <div className="text-center mb-16 animate-fade-in">
-          <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
+          <h2 id="contact-heading" className="text-4xl md:text-5xl font-bold text-foreground mb-4">
             {contactData.title.split(' ').slice(0, -2).join(' ')}{' '}
             <span className="text-primary">{contactData.title.split(' ').slice(-2).join(' ')}</span>
           </h2>

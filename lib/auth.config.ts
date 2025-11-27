@@ -22,12 +22,21 @@ export const authOptions: NextAuthOptions = {
           await connectDB();
 
           const user = await User.findOne({ 
-            email: credentials.email,
-            isActive: true 
+            email: credentials.email
           });
 
           if (!user) {
             throw new Error("Invalid credentials");
+          }
+
+          // Check if email is verified
+          if (!user.isEmailVerified) {
+            throw new Error("Please verify your email before logging in. Check your inbox for the verification link.");
+          }
+
+          // Check if account is active
+          if (!user.isActive) {
+            throw new Error("Your account has been deactivated. Please contact support.");
           }
 
           const isPasswordValid = await user.comparePassword(credentials.password);
